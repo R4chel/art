@@ -1,4 +1,6 @@
+use std::cell::RefCell;
 use std::f64;
+use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
@@ -59,6 +61,11 @@ fn context() -> web_sys::CanvasRenderingContext2d {
         .unwrap()
 }
 
+fn request_animation_frame(f: &Closure<dyn FnMut()>) {
+    window()
+        .request_animation_frame(f.as_ref().unchecked_ref())
+        .expect("should register `requestAnimationFrame` OK");
+}
 // Called when the wasm module is instantiated
 #[wasm_bindgen(start)]
 pub fn main() -> Result<(), JsValue> {
@@ -82,12 +89,17 @@ pub fn main() -> Result<(), JsValue> {
         circles: vec![Circle::new()],
     };
 
-    render(&universe);
+    let main_loop = Rc::new(RefCell::new(None));
+    let main_loop_copy = main_loop.clone();
 
-    for _ in 0..1000 {
+    *main_loop_copy.borrow_mut() = Some(Closure::wrap(Box::new(move || {
         universe.tick();
         render(&universe);
-    }
+
+        request_animation_frame(main_loop.borrow().as_ref().unwrap());
+    }) as Box<dyn FnMut()>));
+
+    request_animation_frame(main_loop_copy.borrow().as_ref().unwrap());
 
     Ok(())
 }
