@@ -43,6 +43,9 @@ fn document() -> web_sys::Document {
         .expect("should have a document on window")
 }
 
+fn body() -> web_sys::HtmlElement {
+    document().body().unwrap()
+}
 fn canvas() -> web_sys::HtmlCanvasElement {
     document()
         .get_element_by_id("canvas")
@@ -66,13 +69,14 @@ fn request_animation_frame(f: &Closure<dyn FnMut()>) {
         .request_animation_frame(f.as_ref().unchecked_ref())
         .expect("should register `requestAnimationFrame` OK");
 }
+
 // Called when the wasm module is instantiated
 #[wasm_bindgen(start)]
 pub fn main() -> Result<(), JsValue> {
     let mut universe = Universe {
         config: Config {
-            height: 250.0,
-            width: 500.0,
+            height: body().client_height() as f64,
+            width: body().client_width() as f64,
             radius: 2.2,
             max_position_delta: 2.3,
             max_color_delta: 5,
@@ -81,6 +85,9 @@ pub fn main() -> Result<(), JsValue> {
     };
 
     universe.add_circle();
+    for _ in 0..100 {
+        universe.add_circle();
+    }
 
     let main_loop = Rc::new(RefCell::new(None));
     let main_loop_copy = main_loop.clone();
