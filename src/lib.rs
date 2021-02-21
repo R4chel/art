@@ -78,6 +78,7 @@ pub fn main() -> Result<(), JsValue> {
 
     let width = body().client_width();
     canvas().set_width(width as u32);
+
     let mut universe = Universe {
         config: Config {
             height: height as f64,
@@ -89,10 +90,35 @@ pub fn main() -> Result<(), JsValue> {
         circles: vec![],
     };
 
+    let add_button = document()
+        .get_element_by_id("add-button")
+        .unwrap()
+        .dyn_into::<web_sys::HtmlButtonElement>()
+        .unwrap();
+
+    let add_button_v2 = document()
+        .create_element("button")
+        .unwrap()
+        .dyn_into::<web_sys::HtmlButtonElement>()
+        .unwrap();
+
+    add_button_v2.set_inner_text("2");
+
+    let add_button_on_click_handler = Closure::wrap(Box::new(move || {
+        web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
+            "You pushed a button!",
+        )));
+    }) as Box<dyn FnMut()>);
+
+    add_button.set_onclick(Some(add_button_on_click_handler.as_ref().unchecked_ref()));
+
+    add_button_v2.set_onclick(Some(add_button_on_click_handler.as_ref().unchecked_ref()));
+    add_button_on_click_handler.forget();
+    body().append_child(&add_button_v2)?;
     universe.add_circle();
-    for _ in 0..100 {
-        universe.add_circle();
-    }
+    // for _ in 0..100 {
+    //     universe.add_circle();
+    // }
 
     let main_loop = Rc::new(RefCell::new(None));
     let main_loop_copy = main_loop.clone();
