@@ -1,5 +1,8 @@
 use wasm_bindgen::prelude::*;
 
+mod circle;
+use circle::{Circle, Universe};
+
 // Called when the wasm module is instantiated
 #[wasm_bindgen(start)]
 pub fn main() -> Result<(), JsValue> {
@@ -14,6 +17,12 @@ pub fn main() -> Result<(), JsValue> {
     val.set_inner_html("Hello from Rust!");
 
     body.append_child(&val)?;
+
+    let universe = Universe {
+        height: 250.0,
+        width: 500.0,
+        circles: vec![],
+    };
 
     Ok(())
 }
