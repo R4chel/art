@@ -2,6 +2,7 @@ use js_sys::Math::random as js_math_random;
 use std::f64;
 use std::fmt::{self, Display};
 
+const MIN_POS: f64 = 0.0;
 #[derive(Debug)]
 struct Position {
     x: f64,
@@ -21,31 +22,22 @@ fn random_in_range(min: f64, max: f64) -> f64 {
     (random() * (max - min)) + min
 }
 
-const MIN_POS: f64 = 0.0;
-const MAX_X_POS: f64 = 500.0;
-const MAX_Y_POS: f64 = 250.0;
-const RADIUS: f64 = 2.2;
 impl Position {
-    fn rand() -> Self {
+    fn new(config: &Config) -> Self {
         Position {
-            x: random_in_range(MIN_POS, MAX_X_POS),
-            y: random_in_range(MIN_POS, MAX_Y_POS),
+            x: random_in_range(MIN_POS, config.width),
+            y: random_in_range(MIN_POS, config.height),
         }
     }
 
-    fn validate(&self) -> bool {
-        self.x >= MIN_POS && self.x <= MAX_X_POS && self.y >= MIN_POS && self.y <= MAX_Y_POS
-    }
+    fn update(&mut self, config: &Config) {
+        let x_min = f64::max(MIN_POS, self.x - config.max_position_delta);
+        let x_max = f64::min(config.width, self.x + config.max_position_delta);
 
-    fn update(&mut self, max_position_delta: f64) {
-        let x_min = f64::max(MIN_POS, self.x - max_position_delta);
-        let x_max = f64::min(MAX_X_POS, self.x + max_position_delta);
-
-        let y_min = f64::max(MIN_POS, self.y - max_position_delta);
-        let y_max = f64::min(MAX_Y_POS, self.y + max_position_delta);
+        let y_min = f64::max(MIN_POS, self.y - config.max_position_delta);
+        let y_max = f64::min(config.height, self.y + config.max_position_delta);
         self.x = random_in_range(x_min, x_max);
         self.y = random_in_range(y_min, y_max);
-        assert!(self.validate());
     }
 }
 
@@ -67,9 +59,9 @@ impl ColorBit {
         }
     }
 
-    fn update(&mut self, color_delta: u8) -> () {
-        let min = self.bit.saturating_sub(color_delta);
-        let max = self.bit.saturating_add(color_delta);
+    fn update(&mut self, config: &Config) -> () {
+        let min = self.bit.saturating_sub(config.max_color_delta);
+        let max = self.bit.saturating_add(config.max_color_delta);
         self.bit = f64::floor(random() * (max - min + 1) as f64) as u8 + min;
     }
 }
@@ -104,7 +96,7 @@ struct Color {
 }
 
 impl Color {
-    fn rand() -> Self {
+    fn new() -> Self {
         Color {
             r: ColorBit::rand(),
             g: ColorBit::rand(),
@@ -120,12 +112,10 @@ impl Color {
         )
     }
 
-    fn update(&mut self, color_delta: u8) {
-        let update_with_delta = move |x| ColorBit::update(x, color_delta);
-
-        update_with_delta(&mut self.r);
-        update_with_delta(&mut self.g);
-        update_with_delta(&mut self.b);
+    fn update(&mut self, config: &Config) {
+        self.r.update(&config);
+        self.g.update(&config);
+        self.b.update(&config);
         self.a.update();
     }
 }
@@ -138,17 +128,17 @@ pub struct Circle {
 }
 
 impl Circle {
-    pub fn new() -> Self {
+    pub fn new(config: &Config) -> Self {
         Circle {
-            position: Position::rand(),
-            color: Color::rand(),
-            radius: RADIUS,
+            position: Position::new(&config),
+            color: Color::new(),
+            radius: config.radius,
         }
     }
 
-    pub fn update(&mut self, position_delta: f64, color_delta: u8) {
-        self.position.update(position_delta);
-        self.color.update(color_delta);
+    pub fn update(&mut self, config: &Config) {
+        self.position.update(&config);
+        self.color.update(&config);
     }
 
     pub fn color(&self) -> String {
@@ -168,17 +158,28 @@ impl Circle {
 }
 
 pub struct Universe {
-    pub width: f64,
-    pub height: f64,
-    pub max_position_delta: f64,
-    pub max_color_delta: u8,
+    pub config: Config,
     pub circles: Vec<Circle>,
 }
 
 impl Universe {
     pub fn tick(&mut self) {
         for circle in self.circles.iter_mut() {
-            circle.update(self.max_position_delta, self.max_color_delta)
+            circle.update(&self.config)
         }
     }
+
+    pub fn add_circle(&mut self) {
+        self.circles.push(Circle::new(&self.config))
+    }
+}
+
+// const config.height: f64 = 250.0;
+// const config.radius: f64 = 2.2;
+pub struct Config {
+    pub width: f64,
+    pub height: f64,
+    pub max_position_delta: f64,
+    pub max_color_delta: u8,
+    pub radius: f64,
 }

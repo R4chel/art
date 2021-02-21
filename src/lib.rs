@@ -5,7 +5,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
 mod circle;
-use circle::{Circle, Universe};
+use circle::{Circle, Config, Universe};
 
 fn draw_circle(context: &web_sys::CanvasRenderingContext2d, circle: &Circle) {
     let color = JsValue::from_str(&circle.color());
@@ -82,12 +82,17 @@ pub fn main() -> Result<(), JsValue> {
     body.append_child(&val)?;
 
     let mut universe = Universe {
-        height: 250.0,
-        width: 500.0,
-        max_position_delta: 2.3,
-        max_color_delta: 5,
-        circles: vec![Circle::new()],
+        config: Config {
+            height: 250.0,
+            width: 500.0,
+            radius: 2.2,
+            max_position_delta: 2.3,
+            max_color_delta: 5,
+        },
+        circles: vec![],
     };
+
+    universe.add_circle();
 
     let main_loop = Rc::new(RefCell::new(None));
     let main_loop_copy = main_loop.clone();
