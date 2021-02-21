@@ -91,7 +91,7 @@ pub fn main() -> Result<(), JsValue> {
     };
 
     let add_button = document()
-        .get_element_by_id("add-button")
+        .get_element_by_id("addButton")
         .unwrap()
         .dyn_into::<web_sys::HtmlButtonElement>()
         .unwrap();
@@ -111,9 +111,18 @@ pub fn main() -> Result<(), JsValue> {
     }) as Box<dyn FnMut()>);
 
     add_button.set_onclick(Some(add_button_on_click_handler.as_ref().unchecked_ref()));
-
-    add_button_v2.set_onclick(Some(add_button_on_click_handler.as_ref().unchecked_ref()));
     add_button_on_click_handler.forget();
+
+    let add_button_v2_on_click_handler = Closure::wrap(Box::new(move || {
+        web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
+            "You pushed the 2 button!",
+        )));
+    }) as Box<dyn FnMut()>);
+    add_button_v2.set_onclick(Some(
+        add_button_v2_on_click_handler.as_ref().unchecked_ref(),
+    ));
+    add_button_v2_on_click_handler.forget();
+
     body().append_child(&add_button_v2)?;
     universe.add_circle();
     // for _ in 0..100 {
