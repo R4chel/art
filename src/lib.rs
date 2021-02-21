@@ -73,10 +73,15 @@ fn request_animation_frame(f: &Closure<dyn FnMut()>) {
 // Called when the wasm module is instantiated
 #[wasm_bindgen(start)]
 pub fn main() -> Result<(), JsValue> {
+    let height = body().client_height();
+    canvas().set_height(height as u32);
+
+    let width = body().client_width();
+    canvas().set_width(width as u32);
     let mut universe = Universe {
         config: Config {
-            height: body().client_height() as f64,
-            width: body().client_width() as f64,
+            height: height as f64,
+            width: width as f64,
             radius: 2.2,
             max_position_delta: 2.3,
             max_color_delta: 5,
