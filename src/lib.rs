@@ -90,6 +90,16 @@ pub fn main() -> Result<(), JsValue> {
         circles: vec![],
     };
 
+    let distance_slider = document()
+        .create_element("input")?
+        .dyn_into::<web_sys::HtmlInputElement>()?;
+    distance_slider.set_class_name("slider");
+    distance_slider.set_min("0");
+    distance_slider.set_value("2.3");
+    distance_slider.set_max("20");
+    distance_slider.set_step("0.1");
+    distance_slider.set_type("range");
+
     let add_button = document()
         .create_element("button")
         .unwrap()
@@ -109,6 +119,8 @@ pub fn main() -> Result<(), JsValue> {
     add_button_on_click_handler.forget();
 
     body().append_child(&add_button)?;
+    body().append_child(&distance_slider)?;
+
     universe.add_circle();
     for _ in 0..100 {
         universe.add_circle();
