@@ -110,9 +110,9 @@ pub fn main() -> Result<(), JsValue> {
 
     body().append_child(&add_button)?;
     universe.add_circle();
-    // for _ in 0..100 {
-    //     universe.add_circle();
-    // }
+    for _ in 0..100 {
+        universe.add_circle();
+    }
 
     let main_loop = Rc::new(RefCell::new(None));
     let main_loop_copy = main_loop.clone();
