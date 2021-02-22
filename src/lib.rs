@@ -91,7 +91,7 @@ pub fn main() -> Result<(), JsValue> {
     };
 
     let add_button = document()
-        .get_element_by_id("addButton")
+        .get_element_by_id("add-button")
         .unwrap()
         .dyn_into::<web_sys::HtmlButtonElement>()
         .unwrap();
