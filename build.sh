@@ -6,3 +6,4 @@ mkdir -p $outdir
 cargo +nightly build --target wasm32-unknown-unknown
 wasm-bindgen --target web target/wasm32-unknown-unknown/debug/art.wasm --out-dir $outdir
 cp index.html $outdir/index.html
+cp style.css $outdir/style.css
