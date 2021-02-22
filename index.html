@@ -3,11 +3,24 @@
 <head>
     <meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
     <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/14.6.3/nouislider.js" integrity="sha512-yXELjsAYxGohZYJmy7nd/cYafOZDUR61poJmF1BNpl6B2em0rVCLDMd/2hwtYAEeXE13MaiNc598Zl8kEj3lPQ==" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/14.6.3/nouislider.css" integrity="sha512-XXtRBFtk/QfR8GEWwQPYjrQBHQwjidXg0wo8HJi9YOaFycWqd2uWkjJoAyx8Mb/+H8uhvmf70EAIxDnQxrwrvw==" crossorigin="anonymous" />
 </head>
 
 <body>
     <canvas id="canvas"></canvas>
+    <div id="slider"></div>
     <script type="module">
+     var slider = document.getElementById('slider');
+
+     noUiSlider.create(slider, {
+         start: [20, 80],
+         connect: true,
+         range: {
+             'min': 0,
+             'max': 100
+         }
+     });
         import init, {
             add
         } from './art.js';
