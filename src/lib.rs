@@ -102,6 +102,7 @@ pub fn main() -> Result<(), JsValue> {
         .dyn_into::<web_sys::HtmlButtonElement>()
         .unwrap();
 
+    add_button_v2.set_id("addButton2");
     add_button_v2.set_inner_text("2");
 
     let add_button_on_click_handler = Closure::wrap(Box::new(move || {
