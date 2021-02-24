@@ -109,7 +109,17 @@ pub fn main() -> Result<(), JsValue> {
         web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
             "You updated a slider!",
         )));
-        distance_slider_universe.lock().unwrap().add_circle();
+
+        distance_slider_universe
+            .lock()
+            .unwrap()
+            .config
+            .max_position_delta = document()
+            .get_element_by_id(distance_slider_id)
+            .unwrap()
+            .dyn_into::<web_sys::HtmlInputElement>()
+            .unwrap()
+            .value_as_number()
     }) as Box<dyn FnMut()>);
 
     distance_slider.set_onchange(Some(
@@ -126,17 +136,12 @@ pub fn main() -> Result<(), JsValue> {
     add_button.set_id("add-button");
     add_button.set_inner_text("+");
 
-    let universe_clone = Arc::clone(&universe);
+    let add_button_universe = Arc::clone(&universe);
     let add_button_on_click_handler = Closure::wrap(Box::new(move || {
         web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
             "You pushed a button!",
         )));
-        universe_clone.lock().unwrap().config.max_position_delta = document()
-            .get_element_by_id(distance_slider_id)
-            .unwrap()
-            .dyn_into::<web_sys::HtmlInputElement>()
-            .unwrap()
-            .value_as_number()
+        add_button_universe.lock().unwrap().add_circle();
     }) as Box<dyn FnMut()>);
 
     add_button.set_onclick(Some(add_button_on_click_handler.as_ref().unchecked_ref()));
