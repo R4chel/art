@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::f64;
 use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
@@ -79,7 +80,7 @@ pub fn main() -> Result<(), JsValue> {
     let width = body().client_width();
     canvas().set_width(width as u32);
 
-    let mut universe = Universe {
+    let mut universe = Arc::new(Mutex::new(Universe {
         config: Config {
             height: height as f64,
             width: width as f64,
@@ -88,7 +89,7 @@ pub fn main() -> Result<(), JsValue> {
             max_color_delta: 5,
         },
         circles: vec![],
-    };
+    }));
 
     let distance_slider = document()
         .create_element("input")?
@@ -121,6 +122,8 @@ pub fn main() -> Result<(), JsValue> {
 
     body().append_child(&distance_slider)?;
 
+    universe.lock().unwrap().add_circle();
+
     // for _ in 0..100 {
     //     universe.add_circle();
     // }
@@ -129,8 +132,8 @@ pub fn main() -> Result<(), JsValue> {
     let main_loop_copy = main_loop.clone();
 
     *main_loop_copy.borrow_mut() = Some(Closure::wrap(Box::new(move || {
-        universe.tick();
-        render(&universe);
+        universe.lock().unwrap().tick();
+        render(&universe.lock().unwrap());
 
         request_animation_frame(main_loop.borrow().as_ref().unwrap());
     }) as Box<dyn FnMut()>));
