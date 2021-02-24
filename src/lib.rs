@@ -109,10 +109,12 @@ pub fn main() -> Result<(), JsValue> {
     add_button.set_id("add-button");
     add_button.set_inner_text("+");
 
+    let universe_clone = Arc::clone(&universe);
     let add_button_on_click_handler = Closure::wrap(Box::new(move || {
         web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
             "You pushed a button!",
         )));
+        universe_clone.lock().unwrap().add_circle();
     }) as Box<dyn FnMut()>);
 
     add_button.set_onclick(Some(add_button_on_click_handler.as_ref().unchecked_ref()));
