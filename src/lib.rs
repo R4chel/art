@@ -128,7 +128,8 @@ pub fn main() -> Result<(), JsValue> {
         .dyn_into::<web_sys::HtmlButtonElement>()
         .unwrap();
 
-    start_stop_button.set_id("start-stop-button");
+    let start_stop_button_id = "start-stop-button";
+    start_stop_button.set_id(start_stop_button_id);
     start_stop_button.set_inner_text("S");
 
     let universe_clone_2 = Arc::clone(&universe);
@@ -137,8 +138,18 @@ pub fn main() -> Result<(), JsValue> {
             "You pushed the start stop button!",
         )));
         // implementation version 1 of toggling status
-        universe_clone_2.lock().unwrap().config.status.toggle();
 
+        universe_clone_2.lock().unwrap().config.status.toggle();
+        let button = document()
+            .get_element_by_id(start_stop_button_id)
+            .unwrap()
+            .dyn_into::<web_sys::HtmlButtonElement>()
+            .unwrap();
+
+        button.set_inner_text(match universe_clone_2.lock().unwrap().config.status {
+            Status::RUNNING => "1",
+            Status::PAUSED => "2",
+        });
         // implementation version 2 of toggling status
         // let mut local_universe = universe_clone_2.lock().unwrap();
         // local_universe.config.status = match local_universe.config.status {
