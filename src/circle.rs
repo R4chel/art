@@ -205,4 +205,12 @@ impl Status {
             Status::PAUSED => Status::RUNNING,
         }
     }
+
+    // button should display what pressing would do, that is the opposite of current state
+    pub fn to_button_display(&self) -> String {
+        String::from(match self {
+            Status::RUNNING => "⏸",
+            Status::PAUSED => "▶️",
+        })
+    }
 }

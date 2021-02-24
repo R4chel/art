@@ -92,15 +92,15 @@ pub fn main() -> Result<(), JsValue> {
         circles: vec![],
     }));
 
-    let distance_slider = document()
-        .create_element("input")?
-        .dyn_into::<web_sys::HtmlInputElement>()?;
-    distance_slider.set_class_name("slider");
-    distance_slider.set_type("range");
-    distance_slider.set_min("0");
-    distance_slider.set_value("2.3");
-    distance_slider.set_max("20");
-    distance_slider.set_step("0.1");
+    // let distance_slider = document()
+    //     .create_element("input")?
+    //     .dyn_into::<web_sys::HtmlInputElement>()?;
+    // distance_slider.set_class_name("slider");
+    // distance_slider.set_type("range");
+    // distance_slider.set_min("0");
+    // distance_slider.set_value("2.3");
+    // distance_slider.set_max("20");
+    // distance_slider.set_step("0.1");
 
     let add_button = document()
         .create_element("button")
@@ -130,7 +130,7 @@ pub fn main() -> Result<(), JsValue> {
 
     let start_stop_button_id = "start-stop-button";
     start_stop_button.set_id(start_stop_button_id);
-    start_stop_button.set_inner_text("S");
+    start_stop_button.set_inner_text(&universe.lock().unwrap().config.status.to_button_display());
 
     let universe_clone_2 = Arc::clone(&universe);
     let start_stop_button_on_click_handler = Closure::wrap(Box::new(move || {
@@ -146,10 +146,15 @@ pub fn main() -> Result<(), JsValue> {
             .dyn_into::<web_sys::HtmlButtonElement>()
             .unwrap();
 
-        button.set_inner_text(match universe_clone_2.lock().unwrap().config.status {
-            Status::RUNNING => "1",
-            Status::PAUSED => "2",
-        });
+        button.set_inner_text(
+            &universe_clone_2
+                .lock()
+                .unwrap()
+                .config
+                .status
+                .to_button_display(),
+        )
+
         // implementation version 2 of toggling status
         // let mut local_universe = universe_clone_2.lock().unwrap();
         // local_universe.config.status = match local_universe.config.status {
@@ -165,13 +170,9 @@ pub fn main() -> Result<(), JsValue> {
 
     body().append_child(&start_stop_button)?;
     body().append_child(&add_button)?;
-    body().append_child(&distance_slider)?;
+    // body().append_child(&distance_slider)?;
 
     universe.lock().unwrap().add_circle();
-
-    // for _ in 0..100 {
-    //     universe.add_circle();
-    // }
 
     let main_loop = Rc::new(RefCell::new(None));
     let main_loop_copy = main_loop.clone();
@@ -185,9 +186,4 @@ pub fn main() -> Result<(), JsValue> {
 
     request_animation_frame(main_loop_copy.borrow().as_ref().unwrap());
     Ok(())
-}
-
-#[wasm_bindgen]
-pub fn add(a: u32, b: u32) -> u32 {
-    a + b
 }
