@@ -92,15 +92,30 @@ pub fn main() -> Result<(), JsValue> {
         circles: vec![],
     }));
 
-    // let distance_slider = document()
-    //     .create_element("input")?
-    //     .dyn_into::<web_sys::HtmlInputElement>()?;
-    // distance_slider.set_class_name("slider");
-    // distance_slider.set_type("range");
-    // distance_slider.set_min("0");
-    // distance_slider.set_value("2.3");
-    // distance_slider.set_max("20");
-    // distance_slider.set_step("0.1");
+    let distance_slider_id = "distance-slider";
+    let distance_slider = document()
+        .create_element("input")?
+        .dyn_into::<web_sys::HtmlInputElement>()?;
+    distance_slider.set_class_name("slider");
+    distance_slider.set_id(distance_slider_id);
+    distance_slider.set_type("range");
+    distance_slider.set_min("0");
+    distance_slider.set_value("2.3");
+    distance_slider.set_max("20");
+    distance_slider.set_step("0.1");
+
+    let distance_slider_universe = Arc::clone(&universe);
+    let distance_slider_on_change_handler = Closure::wrap(Box::new(move || {
+        web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
+            "You updated a slider!",
+        )));
+        distance_slider_universe.lock().unwrap().add_circle();
+    }) as Box<dyn FnMut()>);
+
+    distance_slider.set_onchange(Some(
+        distance_slider_on_change_handler.as_ref().unchecked_ref(),
+    ));
+    distance_slider_on_change_handler.forget();
 
     let add_button = document()
         .create_element("button")
@@ -116,7 +131,12 @@ pub fn main() -> Result<(), JsValue> {
         web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
             "You pushed a button!",
         )));
-        universe_clone.lock().unwrap().add_circle();
+        universe_clone.lock().unwrap().config.max_position_delta = document()
+            .get_element_by_id(distance_slider_id)
+            .unwrap()
+            .dyn_into::<web_sys::HtmlInputElement>()
+            .unwrap()
+            .value_as_number()
     }) as Box<dyn FnMut()>);
 
     add_button.set_onclick(Some(add_button_on_click_handler.as_ref().unchecked_ref()));
@@ -170,7 +190,7 @@ pub fn main() -> Result<(), JsValue> {
 
     body().append_child(&start_stop_button)?;
     body().append_child(&add_button)?;
-    // body().append_child(&distance_slider)?;
+    body().append_child(&distance_slider)?;
 
     universe.lock().unwrap().add_circle();
 
