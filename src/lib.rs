@@ -6,7 +6,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
 mod circle;
-use circle::{Circle, Config, Universe};
+use circle::{Circle, Config, Status, Universe};
 
 fn draw_circle(context: &web_sys::CanvasRenderingContext2d, circle: &Circle) {
     let color = JsValue::from_str(&circle.color());
@@ -80,8 +80,9 @@ pub fn main() -> Result<(), JsValue> {
     let width = body().client_width();
     canvas().set_width(width as u32);
 
-    let mut universe = Arc::new(Mutex::new(Universe {
+    let universe = Arc::new(Mutex::new(Universe {
         config: Config {
+            status: Status::RUNNING,
             height: height as f64,
             width: width as f64,
             radius: 2.2,
@@ -100,6 +101,7 @@ pub fn main() -> Result<(), JsValue> {
     distance_slider.set_value("2.3");
     distance_slider.set_max("20");
     distance_slider.set_step("0.1");
+
     let add_button = document()
         .create_element("button")
         .unwrap()
@@ -120,8 +122,38 @@ pub fn main() -> Result<(), JsValue> {
     add_button.set_onclick(Some(add_button_on_click_handler.as_ref().unchecked_ref()));
     add_button_on_click_handler.forget();
 
-    body().append_child(&add_button)?;
+    let start_stop_button = document()
+        .create_element("button")
+        .unwrap()
+        .dyn_into::<web_sys::HtmlButtonElement>()
+        .unwrap();
 
+    start_stop_button.set_id("start-stop-button");
+    start_stop_button.set_inner_text("S");
+
+    let universe_clone_2 = Arc::clone(&universe);
+    let start_stop_button_on_click_handler = Closure::wrap(Box::new(move || {
+        web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
+            "You pushed the start stop button!",
+        )));
+        // implementation version 1 of toggling status
+        universe_clone_2.lock().unwrap().config.status.toggle();
+
+        // implementation version 2 of toggling status
+        // let mut local_universe = universe_clone_2.lock().unwrap();
+        // local_universe.config.status = match local_universe.config.status {
+        //     Status::RUNNING => Status::PAUSED,
+        //     Status::PAUSED => Status::RUNNING,
+        // }
+    }) as Box<dyn FnMut()>);
+
+    start_stop_button.set_onclick(Some(
+        start_stop_button_on_click_handler.as_ref().unchecked_ref(),
+    ));
+    start_stop_button_on_click_handler.forget();
+
+    body().append_child(&start_stop_button)?;
+    body().append_child(&add_button)?;
     body().append_child(&distance_slider)?;
 
     universe.lock().unwrap().add_circle();

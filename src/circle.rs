@@ -166,8 +166,14 @@ pub struct Universe {
 
 impl Universe {
     pub fn tick(&mut self) {
-        for circle in self.circles.iter_mut() {
-            circle.update(&self.config)
+        match self.config.status {
+            Status::RUNNING => {
+                for circle in self.circles.iter_mut() {
+                    circle.update(&self.config)
+                }
+            }
+
+            Status::PAUSED => {}
         }
     }
 
@@ -178,9 +184,25 @@ impl Universe {
 
 #[derive(Clone)]
 pub struct Config {
+    pub status: Status,
     pub width: f64,
     pub height: f64,
     pub max_position_delta: f64,
     pub max_color_delta: u8,
     pub radius: f64,
+}
+
+#[derive(Clone)]
+pub enum Status {
+    RUNNING,
+    PAUSED,
+}
+
+impl Status {
+    pub fn toggle(&mut self) {
+        *self = match self {
+            Status::RUNNING => Status::PAUSED,
+            Status::PAUSED => Status::RUNNING,
+        }
+    }
 }
