@@ -127,6 +127,38 @@ pub fn main() -> Result<(), JsValue> {
     ));
     distance_slider_on_change_handler.forget();
 
+    let color_slider_id = "color-slider";
+    let color_slider = document()
+        .create_element("input")?
+        .dyn_into::<web_sys::HtmlInputElement>()?;
+    color_slider.set_class_name("slider");
+    color_slider.set_id(color_slider_id);
+    color_slider.set_type("range");
+    color_slider.set_min("0");
+    color_slider.set_value("5");
+    color_slider.set_max("50");
+    color_slider.set_step("1");
+
+    let color_slider_universe = Arc::clone(&universe);
+    let color_slider_on_change_handler = Closure::wrap(Box::new(move || {
+        web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
+            "You updated a slider!",
+        )));
+
+        color_slider_universe.lock().unwrap().config.max_color_delta = document()
+            .get_element_by_id(color_slider_id)
+            .unwrap()
+            .dyn_into::<web_sys::HtmlInputElement>()
+            .unwrap()
+            .value_as_number()
+            as u8
+    }) as Box<dyn FnMut()>);
+
+    color_slider.set_onchange(Some(
+        color_slider_on_change_handler.as_ref().unchecked_ref(),
+    ));
+    color_slider_on_change_handler.forget();
+
     let add_button = document()
         .create_element("button")
         .unwrap()
@@ -196,6 +228,7 @@ pub fn main() -> Result<(), JsValue> {
     body().append_child(&start_stop_button)?;
     body().append_child(&add_button)?;
     body().append_child(&distance_slider)?;
+    body().append_child(&color_slider)?;
 
     universe.lock().unwrap().add_circle();
 
