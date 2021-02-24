@@ -3,7 +3,7 @@ use std::f64;
 use std::fmt::{self, Display};
 
 const MIN_POS: f64 = 0.0;
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Position {
     x: f64,
     y: f64,
@@ -41,7 +41,7 @@ impl Position {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 struct ColorBit {
     bit: u8,
 }
@@ -66,7 +66,7 @@ impl ColorBit {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 struct Opacity {
     bit: f64,
 }
@@ -87,7 +87,7 @@ impl Opacity {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 struct Color {
     r: ColorBit,
     g: ColorBit,
@@ -120,7 +120,8 @@ impl Color {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+
 pub struct Circle {
     position: Position,
     color: Color,
@@ -157,6 +158,7 @@ impl Circle {
     }
 }
 
+#[derive(Clone)]
 pub struct Universe {
     pub config: Config,
     pub circles: Vec<Circle>,
@@ -174,8 +176,7 @@ impl Universe {
     }
 }
 
-// const config.height: f64 = 250.0;
-// const config.radius: f64 = 2.2;
+#[derive(Clone)]
 pub struct Config {
     pub width: f64,
     pub height: f64,

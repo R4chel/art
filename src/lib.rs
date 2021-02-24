@@ -79,7 +79,7 @@ pub fn main() -> Result<(), JsValue> {
     let width = body().client_width();
     canvas().set_width(width as u32);
 
-    let mut universe = Universe {
+    let inner_state = Universe {
         config: Config {
             height: height as f64,
             width: width as f64,
@@ -89,17 +89,17 @@ pub fn main() -> Result<(), JsValue> {
         },
         circles: vec![],
     };
+    let state = Rc::new(RefCell::new(inner_state));
 
     let distance_slider = document()
         .create_element("input")?
         .dyn_into::<web_sys::HtmlInputElement>()?;
     distance_slider.set_class_name("slider");
+    distance_slider.set_type("range");
     distance_slider.set_min("0");
     distance_slider.set_value("2.3");
     distance_slider.set_max("20");
     distance_slider.set_step("0.1");
-    distance_slider.set_type("range");
-
     let add_button = document()
         .create_element("button")
         .unwrap()
@@ -113,31 +113,31 @@ pub fn main() -> Result<(), JsValue> {
         web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
             "You pushed a button!",
         )));
+        state.borrow_mut().add_circle();
     }) as Box<dyn FnMut()>);
 
     add_button.set_onclick(Some(add_button_on_click_handler.as_ref().unchecked_ref()));
     add_button_on_click_handler.forget();
 
-    body().append_child(&add_button)?;
+    body().append_child(&add_button);
+
     body().append_child(&distance_slider)?;
 
-    universe.add_circle();
-    for _ in 0..100 {
-        universe.add_circle();
-    }
+    // for _ in 0..100 {
+    //     universe.add_circle();
+    // }
 
     let main_loop = Rc::new(RefCell::new(None));
     let main_loop_copy = main_loop.clone();
 
     *main_loop_copy.borrow_mut() = Some(Closure::wrap(Box::new(move || {
-        universe.tick();
-        render(&universe);
+        state.borrow_mut().tick();
+        render(&state.borrow());
 
         request_animation_frame(main_loop.borrow().as_ref().unwrap());
     }) as Box<dyn FnMut()>));
 
     request_animation_frame(main_loop_copy.borrow().as_ref().unwrap());
-
     Ok(())
 }
 
