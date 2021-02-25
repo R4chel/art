@@ -301,10 +301,21 @@ pub fn main() -> Result<(), JsValue> {
     let main_loop_copy = main_loop.clone();
 
     *main_loop_copy.borrow_mut() = Some(Closure::wrap(Box::new(move || {
-        render(&universe.lock().unwrap(), false);
+        let bug_checkbox_value = document()
+            .get_element_by_id("bug-checkbox")
+            .unwrap()
+            .dyn_into::<web_sys::HtmlInputElement>()
+            .unwrap()
+            .checked();
 
-        universe.lock().unwrap().tick();
-        render(&universe.lock().unwrap(), true);
+        if bug_checkbox_value {
+            render(&universe.lock().unwrap(), false);
+            universe.lock().unwrap().tick();
+            render(&universe.lock().unwrap(), true);
+        } else {
+            universe.lock().unwrap().tick();
+            render(&universe.lock().unwrap(), false);
+        }
 
         request_animation_frame(main_loop.borrow().as_ref().unwrap());
     }) as Box<dyn FnMut()>));

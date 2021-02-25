@@ -12,3 +12,12 @@ button {
 
 .slider {
 }
+
+.control {
+    background: white;
+    opacity: 80%;
+    padding: 2px;
+    display: inline-block;
+    border-radius: 5px;
+    margin: 15px;
+}
