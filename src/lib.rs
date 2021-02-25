@@ -8,12 +8,15 @@ use wasm_bindgen::JsCast;
 mod circle;
 use circle::{Circle, Config, Status, Universe};
 
-fn draw_circle(context: &web_sys::CanvasRenderingContext2d, circle: &Circle) {
+fn draw_circle(context: &web_sys::CanvasRenderingContext2d, circle: &Circle, highlight: bool) {
     let color = JsValue::from_str(&circle.color());
     context.begin_path();
     context.set_fill_style(&color);
-    context.set_stroke_style(&color);
-
+    if highlight {
+        context.set_stroke_style(&JsValue::from_str("rgb(0,0,0)"));
+    } else {
+        context.set_stroke_style(&color);
+    }
     context
         .arc(
             circle.x_position(),
@@ -27,10 +30,10 @@ fn draw_circle(context: &web_sys::CanvasRenderingContext2d, circle: &Circle) {
     context.fill();
     context.stroke();
 }
-pub fn render(universe: &Universe) {
+pub fn render(universe: &Universe, highlight: bool) {
     let context = context();
     for circle in universe.circles.iter() {
-        draw_circle(&context, &circle)
+        draw_circle(&context, &circle, highlight)
     }
 }
 
@@ -291,8 +294,10 @@ pub fn main() -> Result<(), JsValue> {
     let main_loop_copy = main_loop.clone();
 
     *main_loop_copy.borrow_mut() = Some(Closure::wrap(Box::new(move || {
+        render(&universe.lock().unwrap(), false);
+
         universe.lock().unwrap().tick();
-        render(&universe.lock().unwrap());
+        render(&universe.lock().unwrap(), true);
 
         request_animation_frame(main_loop.borrow().as_ref().unwrap());
     }) as Box<dyn FnMut()>));
