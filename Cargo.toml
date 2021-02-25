@@ -27,5 +27,6 @@ features = [
   'HtmlButtonElement',
   'EventListener',
   'HtmlParagraphElement',
-  'HtmlInputElement'
+  'HtmlInputElement',
+  'HtmlBrElement'
 ]
