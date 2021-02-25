@@ -165,6 +165,36 @@ pub fn main() -> Result<(), JsValue> {
         color_slider_on_change_handler.as_ref().unchecked_ref(),
     ));
     color_slider_on_change_handler.forget();
+    let radius_slider_id = "radius-slider";
+    let radius_slider = document()
+        .create_element("input")?
+        .dyn_into::<web_sys::HtmlInputElement>()?;
+    radius_slider.set_class_name("slider");
+    radius_slider.set_id(radius_slider_id);
+    radius_slider.set_type("range");
+    radius_slider.set_min("1");
+    radius_slider.set_value("2");
+    radius_slider.set_max("20");
+    radius_slider.set_step("1");
+
+    let radius_slider_universe = Arc::clone(&universe);
+    let radius_slider_on_change_handler = Closure::wrap(Box::new(move || {
+        web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
+            "You updated a slider!",
+        )));
+
+        radius_slider_universe.lock().unwrap().config.radius = document()
+            .get_element_by_id(radius_slider_id)
+            .unwrap()
+            .dyn_into::<web_sys::HtmlInputElement>()
+            .unwrap()
+            .value_as_number()
+    }) as Box<dyn FnMut()>);
+
+    radius_slider.set_onchange(Some(
+        radius_slider_on_change_handler.as_ref().unchecked_ref(),
+    ));
+    radius_slider_on_change_handler.forget();
 
     let add_button = document()
         .create_element("button")
@@ -253,6 +283,7 @@ pub fn main() -> Result<(), JsValue> {
     body().append_child(&trash_button)?;
     body().append_child(&distance_slider)?;
     body().append_child(&color_slider)?;
+    body().append_child(&radius_slider)?;
 
     universe.lock().unwrap().add_circle();
 
