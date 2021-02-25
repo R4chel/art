@@ -70,6 +70,13 @@ fn request_animation_frame(f: &Closure<dyn FnMut()>) {
         .request_animation_frame(f.as_ref().unchecked_ref())
         .expect("should register `requestAnimationFrame` OK");
 }
+fn clear_board() {
+    web_sys::console::log(&js_sys::Array::from(&JsValue::from_str("CLEAR")));
+    let canvas = canvas();
+    let context = context();
+
+    context.clear_rect(0.0, 0.0, canvas.width() as f64, canvas.height() as f64);
+}
 
 // Called when the wasm module is instantiated
 #[wasm_bindgen(start)]
@@ -225,8 +232,25 @@ pub fn main() -> Result<(), JsValue> {
     ));
     start_stop_button_on_click_handler.forget();
 
+    let trash_button = document()
+        .create_element("button")
+        .unwrap()
+        .dyn_into::<web_sys::HtmlButtonElement>()
+        .unwrap();
+
+    trash_button.set_id("trash-button");
+    trash_button.set_inner_text("🗑️");
+    let trash_universe = Arc::clone(&universe);
+    let trash_onclick_handler = Closure::wrap(Box::new(move || {
+        trash_universe.lock().unwrap().circles.clear();
+        clear_board();
+    }) as Box<dyn FnMut()>);
+    trash_button.set_onclick(Some(trash_onclick_handler.as_ref().unchecked_ref()));
+    trash_onclick_handler.forget();
+
     body().append_child(&start_stop_button)?;
     body().append_child(&add_button)?;
+    body().append_child(&trash_button)?;
     body().append_child(&distance_slider)?;
     body().append_child(&color_slider)?;
 
