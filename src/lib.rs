@@ -8,15 +8,26 @@ use wasm_bindgen::JsCast;
 mod circle;
 use circle::{Circle, Config, Status, Universe};
 
-fn draw_circle(context: &web_sys::CanvasRenderingContext2d, circle: &Circle, highlight: bool) {
+pub enum StrokeColor {
+    BLACK,
+    FILLCOLOR,
+    DARKER,
+}
+
+fn draw_circle(
+    context: &web_sys::CanvasRenderingContext2d,
+    circle: &Circle,
+    stroke_color: &StrokeColor,
+) {
     let color = JsValue::from_str(&circle.color());
     context.set_fill_style(&color);
     context.begin_path();
-    if highlight {
-        context.set_stroke_style(&JsValue::from_str("rgb(0,0,0)"));
-    } else {
-        context.set_stroke_style(&color);
-    }
+    let stroke_style = match stroke_color {
+        StrokeColor::BLACK => JsValue::from_str("rgb(0,0,0)"),
+        StrokeColor::FILLCOLOR => color,
+        StrokeColor::DARKER => JsValue::from_str(&circle.color.to_slightly_darker_color()),
+    };
+    context.set_stroke_style(&stroke_style);
 
     context
         .arc(
@@ -32,10 +43,14 @@ fn draw_circle(context: &web_sys::CanvasRenderingContext2d, circle: &Circle, hig
     context.stroke();
 }
 
-pub fn render(universe: &Universe, canvas: &web_sys::HtmlCanvasElement, highlight: bool) {
+pub fn render(
+    universe: &Universe,
+    canvas: &web_sys::HtmlCanvasElement,
+    stroke_color: &StrokeColor,
+) {
     let context = context(&canvas);
     for circle in universe.circles.iter() {
-        draw_circle(&context, &circle, highlight)
+        draw_circle(&context, &circle, &stroke_color)
     }
 }
 
@@ -43,10 +58,10 @@ pub fn render_with_highlighting(universe: &Universe) {
     let overlay_canvas = overlay_canvas();
     let default_canvas = default_canvas();
     clear_canvas(&overlay_canvas);
-    render(&universe, &default_canvas, false);
+    render(&universe, &default_canvas, &StrokeColor::FILLCOLOR);
     match &universe.config.status {
         Status::RUNNING => {
-            render(&universe, &overlay_canvas, true);
+            render(&universe, &overlay_canvas, &StrokeColor::DARKER);
         }
         Status::PAUSED => {}
     }
@@ -189,7 +204,7 @@ pub fn main() -> Result<(), JsValue> {
         id: String::from("distance-slider"),
         min: 0.0,
         initial_value: universe.lock().unwrap().config.max_position_delta,
-        max: 20.0,
+        max: 100.0,
         step: 0.1,
     };
 
@@ -369,9 +384,17 @@ pub fn main() -> Result<(), JsValue> {
             .checked();
 
         if bug_checkbox_value {
-            render(&universe.lock().unwrap(), &default_canvas(), false);
+            render(
+                &universe.lock().unwrap(),
+                &default_canvas(),
+                &StrokeColor::FILLCOLOR,
+            );
             universe.lock().unwrap().tick();
-            render(&universe.lock().unwrap(), &default_canvas(), true);
+            render(
+                &universe.lock().unwrap(),
+                &default_canvas(),
+                &StrokeColor::BLACK,
+            );
         } else {
             universe.lock().unwrap().tick();
             render_with_highlighting(&universe.lock().unwrap());

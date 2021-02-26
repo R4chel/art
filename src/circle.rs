@@ -1,3 +1,4 @@
+use hsl::HSL;
 use js_sys::Math::random as js_math_random;
 use std::f64;
 use std::fmt::{self, Display};
@@ -88,7 +89,7 @@ impl Opacity {
 }
 
 #[derive(Clone, Debug)]
-struct Color {
+pub struct Color {
     r: ColorBit,
     g: ColorBit,
     b: ColorBit,
@@ -118,13 +119,20 @@ impl Color {
         self.b.update(&config);
         self.a.update();
     }
+
+    pub fn to_slightly_darker_color(&self) -> String {
+        let mut hsl = HSL::from_rgb(&[self.r.bit, self.g.bit, self.b.bit]);
+        hsl.l = f64::max(0.0, hsl.l - 0.1);
+        let (r, g, b) = hsl.to_rgb();
+        format!("rgb({}, {}, {})", r, g, b)
+    }
 }
 
 #[derive(Debug, Clone)]
 
 pub struct Circle {
     pub position: Position,
-    color: Color,
+    pub color: Color,
     pub radius: f64,
 }
 
