@@ -11,11 +11,13 @@ use circle::{Circle, Config, Status, Universe};
 fn draw_circle(context: &web_sys::CanvasRenderingContext2d, circle: &Circle, highlight: bool) {
     let color = JsValue::from_str(&circle.color());
     context.begin_path();
-    context.set_fill_style(&color);
     if highlight {
-        context.set_stroke_style(&JsValue::from_str("rgb(0,0,0)"));
+        context.set_stroke_style(&JsValue::from_str("rgb(255,255,255)"));
+        context.set_line_width(1.);
     } else {
+        context.set_fill_style(&color);
         context.set_stroke_style(&color);
+        context.set_line_width(10.);
     }
     context
         .arc(
@@ -300,6 +302,7 @@ pub fn main() -> Result<(), JsValue> {
     let main_loop = Rc::new(RefCell::new(None));
     let main_loop_copy = main_loop.clone();
 
+    let mut i = 0;
     *main_loop_copy.borrow_mut() = Some(Closure::wrap(Box::new(move || {
         let bug_checkbox_value = document()
             .get_element_by_id("bug-checkbox")
@@ -309,15 +312,19 @@ pub fn main() -> Result<(), JsValue> {
             .checked();
 
         if bug_checkbox_value {
-            render(&universe.lock().unwrap(), false);
-            universe.lock().unwrap().tick();
-            render(&universe.lock().unwrap(), true);
+            if i % 2 == 0 {
+                render(&universe.lock().unwrap(), false);
+            } else {
+                universe.lock().unwrap().tick();
+                render(&universe.lock().unwrap(), true);
+            }
         } else {
             universe.lock().unwrap().tick();
             render(&universe.lock().unwrap(), false);
         }
 
         request_animation_frame(main_loop.borrow().as_ref().unwrap());
+        i += 1;
     }) as Box<dyn FnMut()>));
 
     request_animation_frame(main_loop_copy.borrow().as_ref().unwrap());
