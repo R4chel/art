@@ -39,6 +39,19 @@ pub fn render(universe: &Universe, canvas: &web_sys::HtmlCanvasElement, highligh
     }
 }
 
+pub fn render_with_highlighting(universe: &Universe) {
+    let overlay_canvas = overlay_canvas();
+    let default_canvas = default_canvas();
+    clear_canvas(&overlay_canvas);
+    render(&universe, &default_canvas, false);
+    match &universe.config.status {
+        Status::RUNNING => {
+            render(&universe, &overlay_canvas, true);
+        }
+        Status::PAUSED => {}
+    }
+}
+
 fn window() -> web_sys::Window {
     web_sys::window().expect("no global `window` exists")
 }
@@ -329,17 +342,13 @@ pub fn main() -> Result<(), JsValue> {
             .unwrap()
             .checked();
 
-        let default_canvas = default_canvas();
-        let overlay_canvas = overlay_canvas();
         if bug_checkbox_value {
-            render(&universe.lock().unwrap(), &default_canvas, false);
+            render(&universe.lock().unwrap(), &default_canvas(), false);
             universe.lock().unwrap().tick();
-            render(&universe.lock().unwrap(), &default_canvas, true);
+            render(&universe.lock().unwrap(), &default_canvas(), true);
         } else {
-            clear_canvas(&overlay_canvas);
             universe.lock().unwrap().tick();
-            render(&universe.lock().unwrap(), &default_canvas, false);
-            render(&universe.lock().unwrap(), &overlay_canvas, true);
+            render_with_highlighting(&universe.lock().unwrap());
         }
 
         request_animation_frame(main_loop.borrow().as_ref().unwrap());
