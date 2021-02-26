@@ -4,9 +4,9 @@ use std::fmt::{self, Display};
 
 const MIN_POS: f64 = 0.0;
 #[derive(Debug, Clone)]
-struct Position {
-    x: f64,
-    y: f64,
+pub struct Position {
+    pub x: f64,
+    pub y: f64,
 }
 
 // not sure what I'm going to do with this but currently leaving in option to use either
@@ -123,9 +123,9 @@ impl Color {
 #[derive(Debug, Clone)]
 
 pub struct Circle {
-    position: Position,
+    pub position: Position,
     color: Color,
-    radius: f64,
+    pub radius: f64,
 }
 
 impl Circle {
@@ -144,17 +144,6 @@ impl Circle {
 
     pub fn color(&self) -> String {
         self.color.to_rgba()
-    }
-
-    pub fn x_position(&self) -> f64 {
-        self.position.x
-    }
-    pub fn y_position(&self) -> f64 {
-        self.position.y
-    }
-
-    pub fn radius(&self) -> f64 {
-        self.radius
     }
 }
 

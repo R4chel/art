@@ -21,9 +21,9 @@ fn draw_circle(context: &web_sys::CanvasRenderingContext2d, circle: &Circle, hig
     }
     context
         .arc(
-            circle.x_position(),
-            circle.y_position(),
-            circle.radius(),
+            circle.position.x,
+            circle.position.y,
+            circle.radius,
             0.0,
             f64::consts::PI * 2.0,
         )
