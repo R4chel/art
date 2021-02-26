@@ -173,7 +173,7 @@ pub fn main() -> Result<(), JsValue> {
             status: Status::RUNNING,
             height: height as f64,
             width: width as f64,
-            radius: 2.2,
+            radius: 10.,
             max_position_delta: 2.3,
             max_color_delta: 5,
         },
@@ -188,7 +188,7 @@ pub fn main() -> Result<(), JsValue> {
     let distance_slider_config = SliderConfig {
         id: String::from("distance-slider"),
         min: 0.0,
-        initial_value: 2.3,
+        initial_value: universe.lock().unwrap().config.max_position_delta,
         max: 20.0,
         step: 0.1,
     };
@@ -218,7 +218,7 @@ pub fn main() -> Result<(), JsValue> {
     let color_slider_config = SliderConfig {
         id: String::from("color-slider"),
         min: 0.0,
-        initial_value: 5.0,
+        initial_value: universe.lock().unwrap().config.max_color_delta as f64,
         max: 50.0,
         step: 1.0,
     };
@@ -243,8 +243,8 @@ pub fn main() -> Result<(), JsValue> {
     let radius_slider_config = SliderConfig {
         id: String::from("radius-slider"),
         min: 1.0,
-        initial_value: 2.0,
-        max: 20.0,
+        initial_value: universe.lock().unwrap().config.radius,
+        max: 100.0,
         step: 1.0,
     };
 
