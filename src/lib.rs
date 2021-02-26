@@ -136,6 +136,11 @@ pub fn main() -> Result<(), JsValue> {
         circles: vec![],
     }));
 
+    let distance_slider_div = document()
+        .create_element("div")?
+        .dyn_into::<web_sys::HtmlDivElement>()?;
+    distance_slider_div.set_class_name("control");
+
     let distance_slider_id = "distance-slider";
     let distance_slider = document()
         .create_element("input")?
@@ -170,6 +175,8 @@ pub fn main() -> Result<(), JsValue> {
         distance_slider_on_change_handler.as_ref().unchecked_ref(),
     ));
     distance_slider_on_change_handler.forget();
+
+    distance_slider_div.append_child(&distance_slider)?;
 
     let color_slider_id = "color-slider";
     let color_slider = document()
@@ -325,7 +332,7 @@ pub fn main() -> Result<(), JsValue> {
     body().append_child(&add_button)?;
     body().append_child(&trash_button)?;
     body().append_child(&br)?;
-    body().append_child(&distance_slider)?;
+    body().append_child(&distance_slider_div)?;
     body().append_child(&color_slider)?;
     body().append_child(&radius_slider)?;
 
