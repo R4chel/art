@@ -113,6 +113,30 @@ fn clear_board() {
     }
 }
 
+struct SliderConfig {
+    id: String,
+    min: f64,
+    max: f64,
+    value: f64,
+    step: f64,
+}
+fn create_slider(config: &SliderConfig) -> web_sys::HtmlInputElement {
+    let slider = document()
+        .create_element("input")
+        .unwrap()
+        .dyn_into::<web_sys::HtmlInputElement>()
+        .unwrap();
+
+    slider.set_class_name("slider");
+    slider.set_id(&config.id);
+    slider.set_type("range");
+    slider.set_min(&config.min.to_string());
+    slider.set_value(&config.value.to_string());
+    slider.set_max(&config.max.to_string());
+    slider.set_step(&config.step.to_string());
+    slider
+}
+
 // Called when the wasm module is instantiated
 #[wasm_bindgen(start)]
 pub fn main() -> Result<(), JsValue> {
@@ -141,17 +165,15 @@ pub fn main() -> Result<(), JsValue> {
         .dyn_into::<web_sys::HtmlDivElement>()?;
     distance_slider_div.set_class_name("control");
 
-    let distance_slider_id = "distance-slider";
-    let distance_slider = document()
-        .create_element("input")?
-        .dyn_into::<web_sys::HtmlInputElement>()?;
-    distance_slider.set_class_name("slider");
-    distance_slider.set_id(distance_slider_id);
-    distance_slider.set_type("range");
-    distance_slider.set_min("0");
-    distance_slider.set_value("2.3");
-    distance_slider.set_max("20");
-    distance_slider.set_step("0.1");
+    let distance_slider_config = SliderConfig {
+        id: String::from("distance-slider"),
+        min: 0.0,
+        value: 2.3,
+        max: 20.0,
+        step: 0.1,
+    };
+
+    let distance_slider = create_slider(&distance_slider_config);
 
     let distance_slider_universe = Arc::clone(&universe);
     let distance_slider_on_change_handler = Closure::wrap(Box::new(move || {
@@ -164,7 +186,7 @@ pub fn main() -> Result<(), JsValue> {
             .unwrap()
             .config
             .max_position_delta = document()
-            .get_element_by_id(distance_slider_id)
+            .get_element_by_id(&distance_slider_config.id)
             .unwrap()
             .dyn_into::<web_sys::HtmlInputElement>()
             .unwrap()
