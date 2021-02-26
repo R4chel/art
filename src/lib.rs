@@ -10,15 +10,14 @@ use circle::{Circle, Config, Status, Universe};
 
 fn draw_circle(context: &web_sys::CanvasRenderingContext2d, circle: &Circle, highlight: bool) {
     let color = JsValue::from_str(&circle.color());
+    context.set_fill_style(&color);
     context.begin_path();
     if highlight {
-        context.set_stroke_style(&JsValue::from_str("rgb(255,255,255)"));
-        context.set_line_width(1.);
+        context.set_stroke_style(&JsValue::from_str("rgb(0,0,0)"));
     } else {
-        context.set_fill_style(&color);
         context.set_stroke_style(&color);
-        context.set_line_width(10.);
     }
+
     context
         .arc(
             circle.position.x,
@@ -32,8 +31,9 @@ fn draw_circle(context: &web_sys::CanvasRenderingContext2d, circle: &Circle, hig
     context.fill();
     context.stroke();
 }
-pub fn render(universe: &Universe, highlight: bool) {
-    let context = context();
+
+pub fn render(universe: &Universe, canvas: &web_sys::HtmlCanvasElement, highlight: bool) {
+    let context = context(&canvas);
     for circle in universe.circles.iter() {
         draw_circle(&context, &circle, highlight)
     }
@@ -52,17 +52,29 @@ fn document() -> web_sys::Document {
 fn body() -> web_sys::HtmlElement {
     document().body().unwrap()
 }
-fn canvas() -> web_sys::HtmlCanvasElement {
+fn get_canvas_by_id(id: &str) -> web_sys::HtmlCanvasElement {
     document()
-        .get_element_by_id("canvas")
+        .get_element_by_id(id)
         .unwrap()
         .dyn_into::<web_sys::HtmlCanvasElement>()
         .map_err(|_| ())
         .unwrap()
 }
 
-fn context() -> web_sys::CanvasRenderingContext2d {
-    canvas()
+fn default_canvas() -> web_sys::HtmlCanvasElement {
+    get_canvas_by_id("canvas")
+}
+
+fn overlay_canvas() -> web_sys::HtmlCanvasElement {
+    get_canvas_by_id("overlay-canvas")
+}
+
+fn all_canvases() -> Vec<web_sys::HtmlCanvasElement> {
+    vec![default_canvas(), overlay_canvas()]
+}
+
+fn context(canvas: &web_sys::HtmlCanvasElement) -> web_sys::CanvasRenderingContext2d {
+    canvas
         .get_context("2d")
         .unwrap()
         .unwrap()
@@ -75,22 +87,29 @@ fn request_animation_frame(f: &Closure<dyn FnMut()>) {
         .request_animation_frame(f.as_ref().unchecked_ref())
         .expect("should register `requestAnimationFrame` OK");
 }
-fn clear_board() {
-    web_sys::console::log(&js_sys::Array::from(&JsValue::from_str("CLEAR")));
-    let canvas = canvas();
-    let context = context();
+
+fn clear_canvas(canvas: &web_sys::HtmlCanvasElement) {
+    let context = context(&canvas);
 
     context.clear_rect(0.0, 0.0, canvas.width() as f64, canvas.height() as f64);
+}
+fn clear_board() {
+    web_sys::console::log(&js_sys::Array::from(&JsValue::from_str("CLEAR")));
+    for canvas in all_canvases() {
+        clear_canvas(&canvas)
+    }
 }
 
 // Called when the wasm module is instantiated
 #[wasm_bindgen(start)]
 pub fn main() -> Result<(), JsValue> {
-    let height = body().client_height();
-    canvas().set_height(height as u32);
-
     let width = body().client_width();
-    canvas().set_width(width as u32);
+    let height = body().client_height();
+
+    for canvas in all_canvases() {
+        canvas.set_height(height as u32);
+        canvas.set_width(width as u32);
+    }
 
     let universe = Arc::new(Mutex::new(Universe {
         config: Config {
@@ -302,7 +321,6 @@ pub fn main() -> Result<(), JsValue> {
     let main_loop = Rc::new(RefCell::new(None));
     let main_loop_copy = main_loop.clone();
 
-    let mut i = 0;
     *main_loop_copy.borrow_mut() = Some(Closure::wrap(Box::new(move || {
         let bug_checkbox_value = document()
             .get_element_by_id("bug-checkbox")
@@ -311,20 +329,20 @@ pub fn main() -> Result<(), JsValue> {
             .unwrap()
             .checked();
 
+        let default_canvas = default_canvas();
+        let overlay_canvas = overlay_canvas();
         if bug_checkbox_value {
-            if i % 2 == 0 {
-                render(&universe.lock().unwrap(), false);
-            } else {
-                universe.lock().unwrap().tick();
-                render(&universe.lock().unwrap(), true);
-            }
-        } else {
+            render(&universe.lock().unwrap(), &default_canvas, false);
             universe.lock().unwrap().tick();
-            render(&universe.lock().unwrap(), false);
+            render(&universe.lock().unwrap(), &default_canvas, true);
+        } else {
+            clear_canvas(&overlay_canvas);
+            universe.lock().unwrap().tick();
+            render(&universe.lock().unwrap(), &default_canvas, false);
+            render(&universe.lock().unwrap(), &overlay_canvas, true);
         }
 
         request_animation_frame(main_loop.borrow().as_ref().unwrap());
-        i += 1;
     }) as Box<dyn FnMut()>));
 
     request_animation_frame(main_loop_copy.borrow().as_ref().unwrap());
