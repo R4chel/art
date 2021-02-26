@@ -148,6 +148,15 @@ impl SliderConfig {
             .value_as_number()
     }
 }
+
+fn create_br() -> web_sys::HtmlBrElement {
+    document()
+        .create_element("br")
+        .unwrap()
+        .dyn_into::<web_sys::HtmlBrElement>()
+        .unwrap()
+}
+
 // Called when the wasm module is instantiated
 #[wasm_bindgen(start)]
 pub fn main() -> Result<(), JsValue> {
@@ -338,16 +347,10 @@ pub fn main() -> Result<(), JsValue> {
     trash_button.set_onclick(Some(trash_onclick_handler.as_ref().unchecked_ref()));
     trash_onclick_handler.forget();
 
-    let br = document()
-        .create_element("br")
-        .unwrap()
-        .dyn_into::<web_sys::HtmlBrElement>()
-        .unwrap();
-
     body().append_child(&start_stop_button)?;
     body().append_child(&add_button)?;
     body().append_child(&trash_button)?;
-    body().append_child(&br)?;
+    body().append_child(&create_br())?;
     body().append_child(&distance_slider_div)?;
     body().append_child(&color_slider)?;
     body().append_child(&radius_slider)?;
