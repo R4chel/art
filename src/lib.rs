@@ -117,26 +117,37 @@ struct SliderConfig {
     id: String,
     min: f64,
     max: f64,
-    value: f64,
+    initial_value: f64,
     step: f64,
 }
-fn create_slider(config: &SliderConfig) -> web_sys::HtmlInputElement {
-    let slider = document()
-        .create_element("input")
-        .unwrap()
-        .dyn_into::<web_sys::HtmlInputElement>()
-        .unwrap();
 
-    slider.set_class_name("slider");
-    slider.set_id(&config.id);
-    slider.set_type("range");
-    slider.set_min(&config.min.to_string());
-    slider.set_value(&config.value.to_string());
-    slider.set_max(&config.max.to_string());
-    slider.set_step(&config.step.to_string());
-    slider
+impl SliderConfig {
+    fn create_slider(config: &Self) -> web_sys::HtmlInputElement {
+        let slider = document()
+            .create_element("input")
+            .unwrap()
+            .dyn_into::<web_sys::HtmlInputElement>()
+            .unwrap();
+
+        slider.set_class_name("slider");
+        slider.set_id(&config.id);
+        slider.set_type("range");
+        slider.set_min(&config.min.to_string());
+        slider.set_value(&config.initial_value.to_string());
+        slider.set_max(&config.max.to_string());
+        slider.set_step(&config.step.to_string());
+        slider
+    }
+
+    fn get_value(&self) -> f64 {
+        document()
+            .get_element_by_id(&self.id)
+            .unwrap()
+            .dyn_into::<web_sys::HtmlInputElement>()
+            .unwrap()
+            .value_as_number()
+    }
 }
-
 // Called when the wasm module is instantiated
 #[wasm_bindgen(start)]
 pub fn main() -> Result<(), JsValue> {
@@ -168,12 +179,12 @@ pub fn main() -> Result<(), JsValue> {
     let distance_slider_config = SliderConfig {
         id: String::from("distance-slider"),
         min: 0.0,
-        value: 2.3,
+        initial_value: 2.3,
         max: 20.0,
         step: 0.1,
     };
 
-    let distance_slider = create_slider(&distance_slider_config);
+    let distance_slider = SliderConfig::create_slider(&distance_slider_config);
 
     let distance_slider_universe = Arc::clone(&universe);
     let distance_slider_on_change_handler = Closure::wrap(Box::new(move || {
@@ -185,12 +196,7 @@ pub fn main() -> Result<(), JsValue> {
             .lock()
             .unwrap()
             .config
-            .max_position_delta = document()
-            .get_element_by_id(&distance_slider_config.id)
-            .unwrap()
-            .dyn_into::<web_sys::HtmlInputElement>()
-            .unwrap()
-            .value_as_number()
+            .max_position_delta = SliderConfig::get_value(&distance_slider_config)
     }) as Box<dyn FnMut()>);
 
     distance_slider.set_onchange(Some(
@@ -200,17 +206,15 @@ pub fn main() -> Result<(), JsValue> {
 
     distance_slider_div.append_child(&distance_slider)?;
 
-    let color_slider_id = "color-slider";
-    let color_slider = document()
-        .create_element("input")?
-        .dyn_into::<web_sys::HtmlInputElement>()?;
-    color_slider.set_class_name("slider");
-    color_slider.set_id(color_slider_id);
-    color_slider.set_type("range");
-    color_slider.set_min("0");
-    color_slider.set_value("5");
-    color_slider.set_max("50");
-    color_slider.set_step("1");
+    let color_slider_config = SliderConfig {
+        id: String::from("color-slider"),
+        min: 0.0,
+        initial_value: 5.0,
+        max: 50.0,
+        step: 1.0,
+    };
+
+    let color_slider = SliderConfig::create_slider(&color_slider_config);
 
     let color_slider_universe = Arc::clone(&universe);
     let color_slider_on_change_handler = Closure::wrap(Box::new(move || {
@@ -218,30 +222,24 @@ pub fn main() -> Result<(), JsValue> {
             "You updated a slider!",
         )));
 
-        color_slider_universe.lock().unwrap().config.max_color_delta = document()
-            .get_element_by_id(color_slider_id)
-            .unwrap()
-            .dyn_into::<web_sys::HtmlInputElement>()
-            .unwrap()
-            .value_as_number()
-            as u8
+        color_slider_universe.lock().unwrap().config.max_color_delta =
+            SliderConfig::get_value(&color_slider_config) as u8
     }) as Box<dyn FnMut()>);
 
     color_slider.set_onchange(Some(
         color_slider_on_change_handler.as_ref().unchecked_ref(),
     ));
     color_slider_on_change_handler.forget();
-    let radius_slider_id = "radius-slider";
-    let radius_slider = document()
-        .create_element("input")?
-        .dyn_into::<web_sys::HtmlInputElement>()?;
-    radius_slider.set_class_name("slider");
-    radius_slider.set_id(radius_slider_id);
-    radius_slider.set_type("range");
-    radius_slider.set_min("1");
-    radius_slider.set_value("2");
-    radius_slider.set_max("20");
-    radius_slider.set_step("1");
+
+    let radius_slider_config = SliderConfig {
+        id: String::from("radius-slider"),
+        min: 1.0,
+        initial_value: 2.0,
+        max: 20.0,
+        step: 1.0,
+    };
+
+    let radius_slider = SliderConfig::create_slider(&radius_slider_config);
 
     let radius_slider_universe = Arc::clone(&universe);
     let radius_slider_on_change_handler = Closure::wrap(Box::new(move || {
@@ -249,12 +247,8 @@ pub fn main() -> Result<(), JsValue> {
             "You updated a slider!",
         )));
 
-        radius_slider_universe.lock().unwrap().config.radius = document()
-            .get_element_by_id(radius_slider_id)
-            .unwrap()
-            .dyn_into::<web_sys::HtmlInputElement>()
-            .unwrap()
-            .value_as_number()
+        radius_slider_universe.lock().unwrap().config.radius =
+            SliderConfig::get_value(&radius_slider_config)
     }) as Box<dyn FnMut()>);
 
     radius_slider.set_onchange(Some(
