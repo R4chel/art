@@ -8,6 +8,7 @@ use wasm_bindgen::JsCast;
 mod circle;
 use circle::{Circle, Config, Status, Universe};
 
+#[derive(Copy, Clone)]
 pub enum StrokeColor {
     BLACK,
     FILLCOLOR,
@@ -17,7 +18,7 @@ pub enum StrokeColor {
 fn draw_circle(
     context: &web_sys::CanvasRenderingContext2d,
     circle: &Circle,
-    stroke_color: &StrokeColor,
+    stroke_color: StrokeColor,
 ) {
     let color = JsValue::from_str(&circle.color());
     context.set_fill_style(&color);
@@ -43,14 +44,10 @@ fn draw_circle(
     context.stroke();
 }
 
-pub fn render(
-    universe: &Universe,
-    canvas: &web_sys::HtmlCanvasElement,
-    stroke_color: &StrokeColor,
-) {
+pub fn render(universe: &Universe, canvas: &web_sys::HtmlCanvasElement, stroke_color: StrokeColor) {
     let context = context(&canvas);
     for circle in universe.circles.iter() {
-        draw_circle(&context, &circle, &stroke_color)
+        draw_circle(&context, &circle, stroke_color)
     }
 }
 
@@ -58,10 +55,10 @@ pub fn render_with_highlighting(universe: &Universe) {
     let overlay_canvas = overlay_canvas();
     let default_canvas = default_canvas();
     clear_canvas(&overlay_canvas);
-    render(&universe, &default_canvas, &StrokeColor::FILLCOLOR);
+    render(&universe, &default_canvas, StrokeColor::FILLCOLOR);
     match &universe.config.status {
         Status::RUNNING => {
-            render(&universe, &overlay_canvas, &StrokeColor::DARKER);
+            render(&universe, &overlay_canvas, StrokeColor::DARKER);
         }
         Status::PAUSED => {}
     }
@@ -467,13 +464,13 @@ pub fn main() -> Result<(), JsValue> {
             render(
                 &universe.lock().unwrap(),
                 &default_canvas(),
-                &StrokeColor::FILLCOLOR,
+                StrokeColor::FILLCOLOR,
             );
             universe.lock().unwrap().tick();
             render(
                 &universe.lock().unwrap(),
                 &default_canvas(),
-                &StrokeColor::BLACK,
+                StrokeColor::BLACK,
             );
         } else {
             universe.lock().unwrap().tick();
