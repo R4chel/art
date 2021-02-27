@@ -138,6 +138,7 @@ fn clear_board() {
 }
 
 struct SliderConfig {
+    title: String,
     id: String,
     min: f64,
     max: f64,
@@ -160,6 +161,7 @@ impl SliderConfig {
         slider.set_value(&config.initial_value.to_string());
         slider.set_max(&config.max.to_string());
         slider.set_step(&config.step.to_string());
+        slider.set_title(&config.title);
         slider
     }
 
@@ -211,6 +213,7 @@ pub fn main() -> Result<(), JsValue> {
 
     let distance_slider_config = SliderConfig {
         id: String::from("distance-slider"),
+        title: String::from("Movement Speed"),
         min: 0.0,
         initial_value: universe.lock().unwrap().config.max_position_delta,
         max: 100.0,
@@ -235,12 +238,14 @@ pub fn main() -> Result<(), JsValue> {
     distance_slider.set_onchange(Some(
         distance_slider_on_change_handler.as_ref().unchecked_ref(),
     ));
+
     distance_slider_on_change_handler.forget();
 
     distance_slider_div.append_child(&distance_slider)?;
 
     let color_slider_config = SliderConfig {
         id: String::from("color-slider"),
+        title: String::from("Color Speed"),
         min: 0.0,
         initial_value: universe.lock().unwrap().config.max_color_delta as f64,
         max: 50.0,
@@ -271,6 +276,7 @@ pub fn main() -> Result<(), JsValue> {
 
     let radius_slider_config = SliderConfig {
         id: String::from("radius-slider"),
+        title: String::from("Size"),
         min: 1.0,
         initial_value: universe.lock().unwrap().config.radius,
         max: 100.0,
