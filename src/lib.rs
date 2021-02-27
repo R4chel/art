@@ -254,6 +254,11 @@ pub fn main() -> Result<(), JsValue> {
         color_slider_on_change_handler.as_ref().unchecked_ref(),
     ));
     color_slider_on_change_handler.forget();
+    let color_slider_div = document()
+        .create_element("div")?
+        .dyn_into::<web_sys::HtmlDivElement>()?;
+    color_slider_div.set_class_name("control");
+    color_slider_div.append_child(&color_slider)?;
 
     let radius_slider_config = SliderConfig {
         id: String::from("radius-slider"),
@@ -362,13 +367,18 @@ pub fn main() -> Result<(), JsValue> {
     trash_button.set_onclick(Some(trash_onclick_handler.as_ref().unchecked_ref()));
     trash_onclick_handler.forget();
 
+    let new_circle_div = document()
+        .create_element("div")?
+        .dyn_into::<web_sys::HtmlDivElement>()?;
+    new_circle_div.set_class_name("control");
+    new_circle_div.append_child(&radius_slider)?;
+    new_circle_div.append_child(&add_button)?;
+
     body().append_child(&start_stop_button)?;
-    body().append_child(&add_button)?;
     body().append_child(&trash_button)?;
-    body().append_child(&create_br())?;
+    body().append_child(&new_circle_div)?;
     body().append_child(&distance_slider_div)?;
-    body().append_child(&color_slider)?;
-    body().append_child(&radius_slider)?;
+    body().append_child(&color_slider_div)?;
 
     universe.lock().unwrap().add_circle();
     universe.lock().unwrap().add_circle();
