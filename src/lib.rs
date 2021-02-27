@@ -305,6 +305,28 @@ pub fn main() -> Result<(), JsValue> {
     add_button.set_onclick(Some(add_button_on_click_handler.as_ref().unchecked_ref()));
     add_button_on_click_handler.forget();
 
+    let freeze_button = document()
+        .create_element("button")
+        .unwrap()
+        .dyn_into::<web_sys::HtmlButtonElement>()
+        .unwrap();
+
+    freeze_button.set_id("freeze-button");
+    freeze_button.set_inner_text("🧊");
+
+    let freeze_button_universe = Arc::clone(&universe);
+    let freeze_button_on_click_handler = Closure::wrap(Box::new(move || {
+        web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
+            "You pushed a button!",
+        )));
+        freeze_button_universe.lock().unwrap().circles.clear();
+    }) as Box<dyn FnMut()>);
+
+    freeze_button.set_onclick(Some(
+        freeze_button_on_click_handler.as_ref().unchecked_ref(),
+    ));
+    freeze_button_on_click_handler.forget();
+
     let start_stop_button = document()
         .create_element("button")
         .unwrap()
@@ -375,6 +397,8 @@ pub fn main() -> Result<(), JsValue> {
     new_circle_div.append_child(&add_button)?;
 
     body().append_child(&start_stop_button)?;
+    body().append_child(&freeze_button)?;
+
     body().append_child(&trash_button)?;
     body().append_child(&new_circle_div)?;
     body().append_child(&distance_slider_div)?;
