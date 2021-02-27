@@ -371,6 +371,7 @@ pub fn main() -> Result<(), JsValue> {
     body().append_child(&radius_slider)?;
 
     universe.lock().unwrap().add_circle();
+    universe.lock().unwrap().add_circle();
 
     let main_loop = Rc::new(RefCell::new(None));
     let main_loop_copy = main_loop.clone();
