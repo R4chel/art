@@ -235,7 +235,7 @@ pub fn main() -> Result<(), JsValue> {
             .max_position_delta = SliderConfig::get_value(&distance_slider_config)
     }) as Box<dyn FnMut()>);
 
-    distance_slider.set_onchange(Some(
+    distance_slider.set_oninput(Some(
         distance_slider_on_change_handler.as_ref().unchecked_ref(),
     ));
 
@@ -264,9 +264,10 @@ pub fn main() -> Result<(), JsValue> {
             SliderConfig::get_value(&color_slider_config) as u8
     }) as Box<dyn FnMut()>);
 
-    color_slider.set_onchange(Some(
+    color_slider.set_oninput(Some(
         color_slider_on_change_handler.as_ref().unchecked_ref(),
     ));
+
     color_slider_on_change_handler.forget();
     let color_slider_div = document()
         .create_element("div")?
