@@ -116,16 +116,25 @@ fn request_animation_frame(f: &Closure<dyn FnMut()>) {
         .expect("should register `requestAnimationFrame` OK");
 }
 
+fn blank_canvas(canvas: &web_sys::HtmlCanvasElement) {
+    let context = context(&canvas);
+
+    context.set_fill_style(&JsValue::from_str("white"));
+    context.fill_rect(0.0, 0.0, canvas.width() as f64, canvas.height() as f64);
+}
+
 fn clear_canvas(canvas: &web_sys::HtmlCanvasElement) {
     let context = context(&canvas);
 
     context.clear_rect(0.0, 0.0, canvas.width() as f64, canvas.height() as f64);
 }
+
 fn clear_board() {
     web_sys::console::log(&js_sys::Array::from(&JsValue::from_str("CLEAR")));
     for canvas in all_canvases() {
         clear_canvas(&canvas)
     }
+    blank_canvas(&default_canvas())
 }
 
 struct SliderConfig {
@@ -389,16 +398,45 @@ pub fn main() -> Result<(), JsValue> {
     trash_button.set_onclick(Some(trash_onclick_handler.as_ref().unchecked_ref()));
     trash_onclick_handler.forget();
 
+    let save_button = document()
+        .create_element("button")
+        .unwrap()
+        .dyn_into::<web_sys::HtmlButtonElement>()
+        .unwrap();
+
+    save_button.set_id("save-button");
+    save_button.set_inner_text("💾");
+    let save_onclick_handler = Closure::wrap(Box::new(move || {
+        web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(&format!(
+            "you tried saving!"
+        ))));
+
+        let image = default_canvas().to_data_url().unwrap();
+
+        let anchor = document()
+            .create_element("a")
+            .unwrap()
+            .dyn_into::<web_sys::HtmlAnchorElement>()
+            .unwrap();
+
+        anchor.set_href(&image);
+        anchor.set_download("art.png");
+        anchor.click();
+    }) as Box<dyn FnMut()>);
+    save_button.set_onclick(Some(save_onclick_handler.as_ref().unchecked_ref()));
+    save_onclick_handler.forget();
+
     let new_circle_div = document()
         .create_element("div")?
         .dyn_into::<web_sys::HtmlDivElement>()?;
     new_circle_div.set_class_name("control");
     new_circle_div.append_child(&radius_slider)?;
     new_circle_div.append_child(&add_button)?;
-
     body().append_child(&start_stop_button)?;
     body().append_child(&freeze_button)?;
+    body().append_child(&save_button)?;
     body().append_child(&trash_button)?;
+
     body().append_child(&new_circle_div)?;
     body().append_child(&distance_slider_div)?;
     body().append_child(&color_slider_div)?;
@@ -409,6 +447,7 @@ pub fn main() -> Result<(), JsValue> {
     let main_loop = Rc::new(RefCell::new(None));
     let main_loop_copy = main_loop.clone();
 
+    clear_board();
     *main_loop_copy.borrow_mut() = Some(Closure::wrap(Box::new(move || {
         let bug_checkbox_value = document()
             .get_element_by_id("bug-checkbox")

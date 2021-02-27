@@ -24,6 +24,7 @@ features = [
   'Document',
   'Element',
   'EventListener',
+  'HtmlAnchorElement',
   'HtmlBrElement',
   'HtmlButtonElement',
   'HtmlCanvasElement',
