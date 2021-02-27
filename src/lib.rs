@@ -189,7 +189,7 @@ pub fn main() -> Result<(), JsValue> {
             height: height as f64,
             width: width as f64,
             radius: 10.,
-            max_position_delta: 2.3,
+            max_position_delta: 6.3,
             max_color_delta: 5,
         },
         circles: vec![],
