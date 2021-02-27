@@ -398,7 +398,6 @@ pub fn main() -> Result<(), JsValue> {
 
     body().append_child(&start_stop_button)?;
     body().append_child(&freeze_button)?;
-
     body().append_child(&trash_button)?;
     body().append_child(&new_circle_div)?;
     body().append_child(&distance_slider_div)?;
