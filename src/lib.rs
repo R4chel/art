@@ -296,7 +296,7 @@ pub fn main() -> Result<(), JsValue> {
             SliderConfig::get_value(&radius_slider_config)
     }) as Box<dyn FnMut()>);
 
-    radius_slider.set_onchange(Some(
+    radius_slider.set_oninput(Some(
         radius_slider_on_change_handler.as_ref().unchecked_ref(),
     ));
     radius_slider_on_change_handler.forget();
