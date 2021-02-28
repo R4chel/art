@@ -494,7 +494,7 @@ pub fn main() -> Result<(), JsValue> {
 
     clear_board();
     *main_loop_copy.borrow_mut() = Some(Closure::wrap(Box::new(move || {
-        let steps = universe.lock().unwrap().config.speed.steps();
+        let steps = universe.lock().unwrap().steps();
 
         let bug_checkbox_value = document()
             .get_element_by_id("bug-checkbox")

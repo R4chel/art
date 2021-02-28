@@ -177,6 +177,10 @@ impl Universe {
     pub fn add_circle(&mut self) {
         self.circles.push(Circle::new(&self.config))
     }
+
+    pub fn steps(&self) -> u8 {
+        f64::ceil(self.config.speed.steps() as f64 / self.circles.len() as f64) as u8
+    }
 }
 
 #[derive(Clone)]
@@ -220,7 +224,7 @@ pub enum Speed {
 }
 
 impl Speed {
-    pub fn steps(self) -> u32 {
+    fn steps(self) -> u32 {
         match self {
             Speed::NORMAL => 1,
             Speed::FAST => 1000,
