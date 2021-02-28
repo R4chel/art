@@ -51,19 +51,6 @@ pub fn render(universe: &Universe, canvas: &web_sys::HtmlCanvasElement, stroke_c
     }
 }
 
-pub fn render_with_highlighting(universe: &Universe) {
-    let overlay_canvas = overlay_canvas();
-    let default_canvas = default_canvas();
-    clear_canvas(&overlay_canvas);
-    render(&universe, &default_canvas, StrokeColor::FILLCOLOR);
-    match &universe.config.status {
-        Status::RUNNING => {
-            render(&universe, &overlay_canvas, StrokeColor::DARKER);
-        }
-        Status::PAUSED => {}
-    }
-}
-
 fn window() -> web_sys::Window {
     web_sys::window().expect("no global `window` exists")
 }
@@ -488,6 +475,9 @@ pub fn main() -> Result<(), JsValue> {
     *main_loop_copy.borrow_mut() = Some(Closure::wrap(Box::new(move || {
         let steps = universe.lock().unwrap().steps();
 
+        let overlay_canvas = overlay_canvas();
+        let default_canvas = default_canvas();
+
         let bug_checkbox_value = document()
             .get_element_by_id("bug-checkbox")
             .unwrap()
@@ -495,24 +485,26 @@ pub fn main() -> Result<(), JsValue> {
             .unwrap()
             .checked();
 
+        let mut universe = universe.lock().unwrap();
         for _ in 0..steps {
             if bug_checkbox_value {
-                render(
-                    &universe.lock().unwrap(),
-                    &default_canvas(),
-                    StrokeColor::FILLCOLOR,
-                );
-                universe.lock().unwrap().tick();
-                render(
-                    &universe.lock().unwrap(),
-                    &default_canvas(),
-                    StrokeColor::BLACK,
-                );
+                render(&universe, &default_canvas, StrokeColor::FILLCOLOR);
+                universe.tick();
+                render(&universe, &default_canvas, StrokeColor::BLACK);
             } else {
-                universe.lock().unwrap().tick();
-                render_with_highlighting(&universe.lock().unwrap());
+                universe.tick();
+                render(&universe, &default_canvas, StrokeColor::FILLCOLOR);
             }
         }
+
+        clear_canvas(&overlay_canvas);
+        match &universe.config.status {
+            Status::RUNNING => {
+                render(&universe, &overlay_canvas, StrokeColor::DARKER);
+            }
+            Status::PAUSED => {}
+        }
+
         request_animation_frame(main_loop.borrow().as_ref().unwrap());
     }) as Box<dyn FnMut()>));
 
