@@ -172,14 +172,6 @@ impl SliderConfig {
     }
 }
 
-fn create_br() -> web_sys::HtmlBrElement {
-    document()
-        .create_element("br")
-        .unwrap()
-        .dyn_into::<web_sys::HtmlBrElement>()
-        .unwrap()
-}
-
 // Called when the wasm module is instantiated
 #[wasm_bindgen(start)]
 pub fn main() -> Result<(), JsValue> {
