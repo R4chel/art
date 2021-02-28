@@ -227,7 +227,7 @@ impl Speed {
     fn steps(self) -> u32 {
         match self {
             Speed::NORMAL => 1,
-            Speed::FAST => 1000,
+            Speed::FAST => 3000,
         }
     }
 
