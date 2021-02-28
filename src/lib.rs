@@ -6,7 +6,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
 mod circle;
-use circle::{Circle, Config, Status, Universe};
+use circle::{Circle, Config, Speed, Status, Universe};
 
 #[derive(Copy, Clone)]
 pub enum StrokeColor {
@@ -194,6 +194,7 @@ pub fn main() -> Result<(), JsValue> {
     let universe = Arc::new(Mutex::new(Universe {
         config: Config {
             status: Status::RUNNING,
+            speed: Speed::NORMAL,
             height: height as f64,
             width: width as f64,
             radius: 10.,
@@ -386,6 +387,43 @@ pub fn main() -> Result<(), JsValue> {
     ));
     start_stop_button_on_click_handler.forget();
 
+    let speed_button = document()
+        .create_element("button")
+        .unwrap()
+        .dyn_into::<web_sys::HtmlButtonElement>()
+        .unwrap();
+
+    let speed_button_id = "speed-button";
+    speed_button.set_id(speed_button_id);
+    speed_button.set_inner_text(&universe.lock().unwrap().config.speed.to_button_display());
+
+    let speed_universe = Arc::clone(&universe);
+    let speed_button_on_click_handler = Closure::wrap(Box::new(move || {
+        web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
+            "You pushed the speed button!",
+        )));
+        // implementation version 1 of toggling speed
+
+        speed_universe.lock().unwrap().config.speed.toggle();
+        let button = document()
+            .get_element_by_id(speed_button_id)
+            .unwrap()
+            .dyn_into::<web_sys::HtmlButtonElement>()
+            .unwrap();
+
+        button.set_inner_text(
+            &speed_universe
+                .lock()
+                .unwrap()
+                .config
+                .speed
+                .to_button_display(),
+        )
+    }) as Box<dyn FnMut()>);
+
+    speed_button.set_onclick(Some(speed_button_on_click_handler.as_ref().unchecked_ref()));
+    speed_button_on_click_handler.forget();
+
     let trash_button = document()
         .create_element("button")
         .unwrap()
@@ -436,7 +474,10 @@ pub fn main() -> Result<(), JsValue> {
     new_circle_div.set_class_name("control");
     new_circle_div.append_child(&radius_slider)?;
     new_circle_div.append_child(&add_button)?;
+
     body().append_child(&start_stop_button)?;
+    body().append_child(&speed_button)?;
+
     body().append_child(&freeze_button)?;
     body().append_child(&save_button)?;
     body().append_child(&trash_button)?;
@@ -453,6 +494,8 @@ pub fn main() -> Result<(), JsValue> {
 
     clear_board();
     *main_loop_copy.borrow_mut() = Some(Closure::wrap(Box::new(move || {
+        let steps = universe.lock().unwrap().config.speed.steps();
+
         let bug_checkbox_value = document()
             .get_element_by_id("bug-checkbox")
             .unwrap()
@@ -460,23 +503,24 @@ pub fn main() -> Result<(), JsValue> {
             .unwrap()
             .checked();
 
-        if bug_checkbox_value {
-            render(
-                &universe.lock().unwrap(),
-                &default_canvas(),
-                StrokeColor::FILLCOLOR,
-            );
-            universe.lock().unwrap().tick();
-            render(
-                &universe.lock().unwrap(),
-                &default_canvas(),
-                StrokeColor::BLACK,
-            );
-        } else {
-            universe.lock().unwrap().tick();
-            render_with_highlighting(&universe.lock().unwrap());
+        for _ in 0..steps {
+            if bug_checkbox_value {
+                render(
+                    &universe.lock().unwrap(),
+                    &default_canvas(),
+                    StrokeColor::FILLCOLOR,
+                );
+                universe.lock().unwrap().tick();
+                render(
+                    &universe.lock().unwrap(),
+                    &default_canvas(),
+                    StrokeColor::BLACK,
+                );
+            } else {
+                universe.lock().unwrap().tick();
+                render_with_highlighting(&universe.lock().unwrap());
+            }
         }
-
         request_animation_frame(main_loop.borrow().as_ref().unwrap());
     }) as Box<dyn FnMut()>));
 

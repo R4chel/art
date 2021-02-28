@@ -182,6 +182,7 @@ impl Universe {
 #[derive(Clone)]
 pub struct Config {
     pub status: Status,
+    pub speed: Speed,
     pub width: f64,
     pub height: f64,
     pub max_position_delta: f64,
@@ -209,5 +210,41 @@ impl Status {
             Status::RUNNING => "⏸",
             Status::PAUSED => "▶️",
         })
+    }
+}
+
+#[derive(Copy, Clone)]
+pub enum Speed {
+    NORMAL,
+    FAST,
+}
+
+impl Speed {
+    pub fn steps(self) -> u32 {
+        match self {
+            Speed::NORMAL => 1,
+            Speed::FAST => 1000,
+        }
+    }
+
+    pub fn next(self) -> Speed {
+        match self {
+            Speed::NORMAL => Speed::FAST,
+            Speed::FAST => Speed::NORMAL,
+        }
+    }
+    pub fn toggle(&mut self) {
+        *self = self.next()
+    }
+
+    fn display(self) -> String {
+        String::from(match self {
+            Speed::NORMAL => "🐢",
+            Speed::FAST => "🐇",
+        })
+    }
+
+    pub fn to_button_display(self) -> String {
+        self.next().display()
     }
 }
