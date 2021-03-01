@@ -159,7 +159,7 @@ impl SliderConfig {
     }
 }
 
-fn control_div(input: &web_sys::HtmlInputElement) -> web_sys::HtmlDivElement {
+fn control_div(input: &web_sys::HtmlInputElement, label: &str) -> web_sys::HtmlDivElement {
     let div = document()
         .create_element("div")
         .unwrap()
@@ -167,6 +167,7 @@ fn control_div(input: &web_sys::HtmlInputElement) -> web_sys::HtmlDivElement {
         .unwrap();
     div.set_class_name("control");
     div.append_child(&input).unwrap();
+
     div
 }
 
@@ -284,11 +285,6 @@ pub fn main() -> Result<(), JsValue> {
     ));
 
     color_slider_on_change_handler.forget();
-    let color_slider_div = document()
-        .create_element("div")?
-        .dyn_into::<web_sys::HtmlDivElement>()?;
-    color_slider_div.set_class_name("control");
-    color_slider_div.append_child(&color_slider)?;
 
     let radius_slider_config = SliderConfig {
         id: String::from("radius-slider"),
