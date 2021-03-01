@@ -159,6 +159,29 @@ impl SliderConfig {
     }
 }
 
+fn control_div(input: &web_sys::HtmlInputElement) -> web_sys::HtmlDivElement {
+    let div = document()
+        .create_element("div")
+        .unwrap()
+        .dyn_into::<web_sys::HtmlDivElement>()
+        .unwrap();
+    div.set_class_name("control");
+    div.append_child(&input).unwrap();
+    div
+}
+
+pub fn new_button(id: &str, text: &str) -> web_sys::HtmlButtonElement {
+    let button = document()
+        .create_element("button")
+        .unwrap()
+        .dyn_into::<web_sys::HtmlButtonElement>()
+        .unwrap();
+
+    button.set_id(id);
+    button.set_inner_text(text);
+    button
+}
+
 // Called when the wasm module is instantiated
 #[wasm_bindgen(start)]
 pub fn main() -> Result<(), JsValue> {
@@ -182,11 +205,6 @@ pub fn main() -> Result<(), JsValue> {
         },
         circles: vec![],
     }));
-
-    let distance_slider_div = document()
-        .create_element("div")?
-        .dyn_into::<web_sys::HtmlDivElement>()?;
-    distance_slider_div.set_class_name("control");
 
     let distance_slider_config = SliderConfig {
         id: String::from("distance-slider"),
@@ -217,8 +235,6 @@ pub fn main() -> Result<(), JsValue> {
     ));
 
     distance_slider_on_change_handler.forget();
-
-    distance_slider_div.append_child(&distance_slider)?;
 
     let color_slider_config = SliderConfig {
         id: String::from("color-slider"),
@@ -278,15 +294,7 @@ pub fn main() -> Result<(), JsValue> {
     ));
     radius_slider_on_change_handler.forget();
 
-    let add_button = document()
-        .create_element("button")
-        .unwrap()
-        .dyn_into::<web_sys::HtmlButtonElement>()
-        .unwrap();
-
-    add_button.set_id("add-button");
-    add_button.set_inner_text("+");
-
+    let add_button = new_button("add-button", "+");
     let add_button_universe = Arc::clone(&universe);
     let add_button_on_click_handler = Closure::wrap(Box::new(move || {
         web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
@@ -298,15 +306,7 @@ pub fn main() -> Result<(), JsValue> {
     add_button.set_onclick(Some(add_button_on_click_handler.as_ref().unchecked_ref()));
     add_button_on_click_handler.forget();
 
-    let freeze_button = document()
-        .create_element("button")
-        .unwrap()
-        .dyn_into::<web_sys::HtmlButtonElement>()
-        .unwrap();
-
-    freeze_button.set_id("freeze-button");
-    freeze_button.set_inner_text("🧊");
-
+    let freeze_button = new_button("freeze-button", "🧊");
     let freeze_button_universe = Arc::clone(&universe);
     let freeze_button_on_click_handler = Closure::wrap(Box::new(move || {
         web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
@@ -320,38 +320,18 @@ pub fn main() -> Result<(), JsValue> {
     ));
     freeze_button_on_click_handler.forget();
 
-    let start_stop_button = document()
-        .create_element("button")
-        .unwrap()
-        .dyn_into::<web_sys::HtmlButtonElement>()
-        .unwrap();
-
     let start_stop_button_id = "start-stop-button";
-    start_stop_button.set_id(start_stop_button_id);
-    start_stop_button.set_inner_text(&universe.lock().unwrap().config.status.to_button_display());
-
-    let universe_clone_2 = Arc::clone(&universe);
+    let start_stop_button = new_button(
+        start_stop_button_id,
+        &universe.lock().unwrap().config.status.to_button_display(),
+    );
+    let start_stop_universe = Arc::clone(&universe);
     let start_stop_button_on_click_handler = Closure::wrap(Box::new(move || {
         web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
             "You pushed the start stop button!",
         )));
         // implementation version 1 of toggling status
-
-        universe_clone_2.lock().unwrap().config.status.toggle();
-        let button = document()
-            .get_element_by_id(start_stop_button_id)
-            .unwrap()
-            .dyn_into::<web_sys::HtmlButtonElement>()
-            .unwrap();
-
-        button.set_inner_text(
-            &universe_clone_2
-                .lock()
-                .unwrap()
-                .config
-                .status
-                .to_button_display(),
-        )
+        start_stop_universe.lock().unwrap().config.status.toggle();
 
         // implementation version 2 of toggling status
         // let mut local_universe = universe_clone_2.lock().unwrap();
@@ -359,6 +339,21 @@ pub fn main() -> Result<(), JsValue> {
         //     Status::RUNNING => Status::PAUSED,
         //     Status::PAUSED => Status::RUNNING,
         // }
+
+        let button = document()
+            .get_element_by_id(start_stop_button_id)
+            .unwrap()
+            .dyn_into::<web_sys::HtmlButtonElement>()
+            .unwrap();
+
+        button.set_inner_text(
+            &start_stop_universe
+                .lock()
+                .unwrap()
+                .config
+                .status
+                .to_button_display(),
+        )
     }) as Box<dyn FnMut()>);
 
     start_stop_button.set_onclick(Some(
@@ -366,24 +361,20 @@ pub fn main() -> Result<(), JsValue> {
     ));
     start_stop_button_on_click_handler.forget();
 
-    let speed_button = document()
-        .create_element("button")
-        .unwrap()
-        .dyn_into::<web_sys::HtmlButtonElement>()
-        .unwrap();
-
     let speed_button_id = "speed-button";
-    speed_button.set_id(speed_button_id);
-    speed_button.set_inner_text(&universe.lock().unwrap().config.speed.to_button_display());
+    let speed_button = new_button(
+        speed_button_id,
+        &universe.lock().unwrap().config.speed.to_button_display(),
+    );
 
     let speed_universe = Arc::clone(&universe);
     let speed_button_on_click_handler = Closure::wrap(Box::new(move || {
         web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
             "You pushed the speed button!",
         )));
-        // implementation version 1 of toggling speed
 
         speed_universe.lock().unwrap().config.speed.toggle();
+
         let button = document()
             .get_element_by_id(speed_button_id)
             .unwrap()
@@ -403,14 +394,7 @@ pub fn main() -> Result<(), JsValue> {
     speed_button.set_onclick(Some(speed_button_on_click_handler.as_ref().unchecked_ref()));
     speed_button_on_click_handler.forget();
 
-    let trash_button = document()
-        .create_element("button")
-        .unwrap()
-        .dyn_into::<web_sys::HtmlButtonElement>()
-        .unwrap();
-
-    trash_button.set_id("trash-button");
-    trash_button.set_inner_text("🗑️");
+    let trash_button = new_button("trash-button", "🗑️");
     let trash_universe = Arc::clone(&universe);
     let trash_onclick_handler = Closure::wrap(Box::new(move || {
         trash_universe.lock().unwrap().circles.clear();
@@ -419,14 +403,7 @@ pub fn main() -> Result<(), JsValue> {
     trash_button.set_onclick(Some(trash_onclick_handler.as_ref().unchecked_ref()));
     trash_onclick_handler.forget();
 
-    let save_button = document()
-        .create_element("button")
-        .unwrap()
-        .dyn_into::<web_sys::HtmlButtonElement>()
-        .unwrap();
-
-    save_button.set_id("save-button");
-    save_button.set_inner_text("💾");
+    let save_button = new_button("save-button", "💾");
     let save_onclick_handler = Closure::wrap(Box::new(move || {
         web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(&format!(
             "you tried saving!"
@@ -447,11 +424,7 @@ pub fn main() -> Result<(), JsValue> {
     save_button.set_onclick(Some(save_onclick_handler.as_ref().unchecked_ref()));
     save_onclick_handler.forget();
 
-    let new_circle_div = document()
-        .create_element("div")?
-        .dyn_into::<web_sys::HtmlDivElement>()?;
-    new_circle_div.set_class_name("control");
-    new_circle_div.append_child(&radius_slider)?;
+    let new_circle_div = control_div(&radius_slider);
     new_circle_div.append_child(&add_button)?;
 
     body().append_child(&start_stop_button)?;
@@ -462,8 +435,8 @@ pub fn main() -> Result<(), JsValue> {
     body().append_child(&trash_button)?;
 
     body().append_child(&new_circle_div)?;
-    body().append_child(&distance_slider_div)?;
-    body().append_child(&color_slider_div)?;
+    body().append_child(&(control_div(&distance_slider)))?;
+    body().append_child(&(control_div(&color_slider)))?;
 
     universe.lock().unwrap().add_circle();
     universe.lock().unwrap().add_circle();
