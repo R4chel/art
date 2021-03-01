@@ -17,8 +17,7 @@ button {
     margin: 2px;
 }
 
-.slider {
-}
+.slider {}
 
 .control {
     background: white;
@@ -29,14 +28,17 @@ button {
     margin: 15px;
 }
 
-@keyframes blink { 
-    50% { outline-color: purple;}
+@keyframes blink {
+    50% {
+        outline-color: purple;
+        outline-style: dashed;
+    }
 }
 
 .highlight {
-    animation-name: blink ;
-    animation-duration: .5s ;
-    animation-timing-function: step-end ;
-    animation-iteration-count: infinite ;
-    animation-direction: alternate ;
+    animation-name: blink;
+    animation-duration: .5s;
+    animation-timing-function: step-end;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
 }

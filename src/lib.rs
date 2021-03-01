@@ -159,7 +159,7 @@ impl SliderConfig {
     }
 }
 
-fn control_div(input: &web_sys::HtmlInputElement, label: &str) -> web_sys::HtmlDivElement {
+fn control_div(input: &web_sys::HtmlInputElement) -> web_sys::HtmlDivElement {
     let div = document()
         .create_element("div")
         .unwrap()
