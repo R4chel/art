@@ -181,6 +181,28 @@ pub fn new_button(id: &str, text: &str) -> web_sys::HtmlButtonElement {
     button.set_inner_text(text);
     button
 }
+fn new_checkbox(id: &str, text: &str) -> web_sys::HtmlDivElement {
+    let checkbox = document()
+        .create_element("input")
+        .unwrap()
+        .dyn_into::<web_sys::HtmlInputElement>()
+        .unwrap();
+
+    checkbox.set_id(&id);
+    checkbox.set_type("checkbox");
+
+    let label = document()
+        .create_element("label")
+        .unwrap()
+        .dyn_into::<web_sys::HtmlLabelElement>()
+        .unwrap();
+    label.set_html_for(id);
+    label.set_inner_text(&text);
+
+    let div = control_div(&checkbox);
+    div.append_child(&label).unwrap();
+    div
+}
 
 // Called when the wasm module is instantiated
 #[wasm_bindgen(start)]
@@ -424,6 +446,9 @@ pub fn main() -> Result<(), JsValue> {
     save_button.set_onclick(Some(save_onclick_handler.as_ref().unchecked_ref()));
     save_onclick_handler.forget();
 
+    let bug_checkbox_id = "bug-checkbox";
+    let bug_checkbox = new_checkbox(bug_checkbox_id, "🐛");
+
     let new_circle_div = control_div(&radius_slider);
     new_circle_div.append_child(&add_button)?;
 
@@ -435,6 +460,7 @@ pub fn main() -> Result<(), JsValue> {
     body().append_child(&trash_button)?;
 
     body().append_child(&new_circle_div)?;
+    body().append_child(&bug_checkbox)?;
     body().append_child(&(control_div(&distance_slider)))?;
     body().append_child(&(control_div(&color_slider)))?;
 
@@ -452,7 +478,7 @@ pub fn main() -> Result<(), JsValue> {
         let default_canvas = default_canvas();
 
         let bug_checkbox_value = document()
-            .get_element_by_id("bug-checkbox")
+            .get_element_by_id(bug_checkbox_id)
             .unwrap()
             .dyn_into::<web_sys::HtmlInputElement>()
             .unwrap()
