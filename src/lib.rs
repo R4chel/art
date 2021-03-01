@@ -316,13 +316,19 @@ pub fn main() -> Result<(), JsValue> {
     ));
     radius_slider_on_change_handler.forget();
 
-    let add_button = new_button("add-button", "+");
+    let add_button_id = "add-button";
+    let add_button = new_button(add_button_id, "+");
     let add_button_universe = Arc::clone(&universe);
     let add_button_on_click_handler = Closure::wrap(Box::new(move || {
         web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
             "You pushed a button!",
         )));
         add_button_universe.lock().unwrap().add_circle();
+
+        document()
+            .get_element_by_id(add_button_id)
+            .unwrap()
+            .set_class_name("");
     }) as Box<dyn FnMut()>);
 
     add_button.set_onclick(Some(add_button_on_click_handler.as_ref().unchecked_ref()));
@@ -335,6 +341,10 @@ pub fn main() -> Result<(), JsValue> {
             "You pushed a button!",
         )));
         freeze_button_universe.lock().unwrap().circles.clear();
+        document()
+            .get_element_by_id(add_button_id)
+            .unwrap()
+            .set_class_name("highlight");
     }) as Box<dyn FnMut()>);
 
     freeze_button.set_onclick(Some(
@@ -421,6 +431,10 @@ pub fn main() -> Result<(), JsValue> {
     let trash_onclick_handler = Closure::wrap(Box::new(move || {
         trash_universe.lock().unwrap().circles.clear();
         clear_board();
+        document()
+            .get_element_by_id(add_button_id)
+            .unwrap()
+            .set_class_name("highlight");
     }) as Box<dyn FnMut()>);
     trash_button.set_onclick(Some(trash_onclick_handler.as_ref().unchecked_ref()));
     trash_onclick_handler.forget();

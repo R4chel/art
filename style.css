@@ -28,3 +28,15 @@ button {
     border-radius: 5px;
     margin: 15px;
 }
+
+@keyframes blink { 
+    50% { outline-color: purple;}
+}
+
+.highlight {
+    animation-name: blink ;
+    animation-duration: .5s ;
+    animation-timing-function: step-end ;
+    animation-iteration-count: infinite ;
+    animation-direction: alternate ;
+}
