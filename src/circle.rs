@@ -64,23 +64,21 @@ impl ColorBit {
 }
 
 #[derive(Clone, Debug)]
-struct Opacity {
-    bit: f64,
-}
+struct Opacity(f64);
 
 impl Display for Opacity {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.bit)
+        write!(f, "{}", self)
     }
 }
 
 impl Opacity {
     fn rand() -> Self {
-        Opacity { bit: random() }
+        Opacity(random())
     }
 
     fn update(&mut self) -> () {
-        self.bit = random()
+        self.0 = random()
     }
 }
 
@@ -122,7 +120,6 @@ impl Color {
 }
 
 #[derive(Debug, Clone)]
-
 pub struct Circle {
     pub position: Position,
     pub color: Color,
