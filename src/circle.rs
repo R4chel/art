@@ -47,7 +47,7 @@ struct ColorBit(u8);
 
 impl Display for ColorBit {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self)
+        write!(f, "{}", self.0)
     }
 }
 
@@ -68,7 +68,7 @@ struct Opacity(f64);
 
 impl Display for Opacity {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self)
+        write!(f, "{}", self.0)
     }
 }
 
