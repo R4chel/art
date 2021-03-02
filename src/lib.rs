@@ -158,14 +158,35 @@ impl SliderConfig {
             .value_as_number()
     }
 }
+fn label(id: &str, text: &str) -> web_sys::HtmlLabelElement {
+    let label = document()
+        .create_element("label")
+        .unwrap()
+        .dyn_into::<web_sys::HtmlLabelElement>()
+        .unwrap();
+    label.set_html_for(id);
+    label.set_inner_text(&text);
+    label
+}
 
-fn control_div(input: &web_sys::HtmlInputElement) -> web_sys::HtmlDivElement {
+fn control_div(
+    input: &web_sys::HtmlInputElement,
+    id: &str,
+    left_label: Option<&str>,
+) -> web_sys::HtmlDivElement {
     let div = document()
         .create_element("div")
         .unwrap()
         .dyn_into::<web_sys::HtmlDivElement>()
         .unwrap();
     div.set_class_name("control");
+    match left_label {
+        None => {}
+        Some(text) => {
+            let label = label(id, text);
+            div.append_child(&label).unwrap();
+        }
+    }
     div.append_child(&input).unwrap();
 
     div
@@ -182,6 +203,7 @@ pub fn new_button(id: &str, text: &str) -> web_sys::HtmlButtonElement {
     button.set_inner_text(text);
     button
 }
+
 fn new_checkbox(id: &str, text: &str) -> web_sys::HtmlDivElement {
     let checkbox = document()
         .create_element("input")
@@ -192,17 +214,7 @@ fn new_checkbox(id: &str, text: &str) -> web_sys::HtmlDivElement {
     checkbox.set_id(&id);
     checkbox.set_type("checkbox");
 
-    let label = document()
-        .create_element("label")
-        .unwrap()
-        .dyn_into::<web_sys::HtmlLabelElement>()
-        .unwrap();
-    label.set_html_for(id);
-    label.set_inner_text(&text);
-
-    let div = control_div(&checkbox);
-    div.append_child(&label).unwrap();
-    div
+    control_div(&checkbox, id, Some(&text))
 }
 
 // Called when the wasm module is instantiated
@@ -229,8 +241,9 @@ pub fn main() -> Result<(), JsValue> {
         circles: vec![],
     }));
 
+    let distance_slider_id = "distance-slider";
     let distance_slider_config = SliderConfig {
-        id: String::from("distance-slider"),
+        id: String::from(distance_slider_id),
         title: String::from("Movement Speed"),
         min: 0.0,
         initial_value: universe.lock().unwrap().config.max_position_delta,
@@ -259,8 +272,9 @@ pub fn main() -> Result<(), JsValue> {
 
     distance_slider_on_change_handler.forget();
 
+    let color_slider_id = "color-slider";
     let color_slider_config = SliderConfig {
-        id: String::from("color-slider"),
+        id: String::from(color_slider_id),
         title: String::from("Color Speed"),
         min: 0.0,
         initial_value: universe.lock().unwrap().config.max_color_delta as f64,
@@ -286,8 +300,9 @@ pub fn main() -> Result<(), JsValue> {
 
     color_slider_on_change_handler.forget();
 
+    let radius_slider_id = "radius-slider";
     let radius_slider_config = SliderConfig {
-        id: String::from("radius-slider"),
+        id: String::from(radius_slider_id),
         title: String::from("Size"),
         min: 1.0,
         initial_value: universe.lock().unwrap().config.radius,
@@ -459,8 +474,10 @@ pub fn main() -> Result<(), JsValue> {
     let bug_checkbox_id = "bug-checkbox";
     let bug_checkbox = new_checkbox(bug_checkbox_id, "🐛");
 
-    let new_circle_div = control_div(&radius_slider);
+    let new_circle_div = control_div(&radius_slider, &radius_slider_id, None);
     new_circle_div.append_child(&add_button)?;
+
+    let distance_slider_div = control_div(&distance_slider, &distance_slider_id, Some("↔"));
 
     body().append_child(&start_stop_button)?;
     body().append_child(&speed_button)?;
@@ -471,8 +488,9 @@ pub fn main() -> Result<(), JsValue> {
 
     body().append_child(&new_circle_div)?;
     body().append_child(&bug_checkbox)?;
-    body().append_child(&(control_div(&distance_slider)))?;
-    body().append_child(&(control_div(&color_slider)))?;
+
+    body().append_child(&distance_slider_div)?;
+    body().append_child(&(control_div(&color_slider, &color_slider_id, Some("🌈"))))?;
 
     universe.lock().unwrap().add_circle();
     universe.lock().unwrap().add_circle();
