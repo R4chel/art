@@ -43,27 +43,23 @@ impl Position {
 }
 
 #[derive(Clone, Debug)]
-struct ColorBit {
-    bit: u8,
-}
+struct ColorBit(u8);
 
 impl Display for ColorBit {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.bit)
+        write!(f, "{}", self)
     }
 }
 
 impl ColorBit {
     fn rand() -> Self {
-        ColorBit {
-            bit: f64::round(random() * 255 as f64) as u8,
-        }
+        ColorBit(f64::round(random() * 255 as f64) as u8)
     }
 
     fn update(&mut self, config: &Config) -> () {
-        let min = self.bit.saturating_sub(config.max_color_delta);
-        let max = self.bit.saturating_add(config.max_color_delta);
-        self.bit = f64::floor(random() * (max - min + 1) as f64) as u8 + min;
+        let min = self.0.saturating_sub(config.max_color_delta);
+        let max = self.0.saturating_add(config.max_color_delta);
+        self.0 = f64::floor(random() * (max - min + 1) as f64) as u8 + min;
     }
 }
 
@@ -107,10 +103,7 @@ impl Color {
     }
 
     fn to_rgba(&self) -> String {
-        format!(
-            "rgb({}, {}, {}, {})",
-            self.r.bit, self.g.bit, self.b.bit, self.a.bit
-        )
+        format!("rgb({}, {}, {}, {})", self.r, self.g, self.b, self.a)
     }
 
     fn update(&mut self, config: &Config) {
@@ -121,7 +114,7 @@ impl Color {
     }
 
     pub fn to_slightly_darker_color(&self) -> String {
-        let mut hsl = HSL::from_rgb(&[self.r.bit, self.g.bit, self.b.bit]);
+        let mut hsl = HSL::from_rgb(&[self.r.0, self.g.0, self.b.0]);
         hsl.l = f64::max(0.0, hsl.l - 0.1);
         let (r, g, b) = hsl.to_rgb();
         format!("rgb({}, {}, {})", r, g, b)
