@@ -128,10 +128,11 @@ struct SliderConfig {
     max: f64,
     step: f64,
     of_universe: fn(&Universe) -> f64,
+    on_update: fn(&mut Universe, f64) -> (),
 }
 
 impl SliderConfig {
-    fn create_slider(config: &Self, universe: &Universe) -> web_sys::HtmlInputElement {
+    fn create_slider(config: Self, universe: &Arc<Mutex<Universe>>) -> web_sys::HtmlInputElement {
         let slider = document()
             .create_element("input")
             .unwrap()
@@ -142,10 +143,24 @@ impl SliderConfig {
         slider.set_id(&config.id);
         slider.set_type("range");
         slider.set_min(&config.min.to_string());
-        slider.set_value(&(config.of_universe)(universe).to_string());
+        slider.set_value(&(config.of_universe)(&universe.lock().unwrap()).to_string());
         slider.set_max(&config.max.to_string());
         slider.set_step(&config.step.to_string());
         slider.set_title(&config.title);
+
+        let universe_clone = Arc::clone(&universe);
+        let on_change_handler = Closure::wrap(Box::new(move || {
+            web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(&format!(
+                "You updated the {} slider!",
+                &config.id
+            ))));
+
+            (&config.on_update)(&mut universe_clone.lock().unwrap(), config.get_value());
+        }) as Box<dyn FnMut()>);
+
+        slider.set_oninput(Some(on_change_handler.as_ref().unchecked_ref()));
+
+        on_change_handler.forget();
         slider
     }
 
@@ -157,6 +172,19 @@ impl SliderConfig {
             .unwrap()
             .value_as_number()
     }
+
+    // fn create_handler(&'static self, universe: Arc<Mutex<Universe>>) {
+    //     let id = self.id;
+    //     let update = self.on_update;
+    //     let distance_slider_on_change_handler = Closure::wrap(Box::new(move || {
+    //         web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(&format!(
+    //             "You updated the {} slider!",
+    //             id
+    //         ))));
+
+    //         (update)(&mut universe.lock().unwrap(), self.get_value());
+    //     }) as Box<dyn FnMut()>);
+    // }
 }
 fn label(id: &str, text: &str) -> web_sys::HtmlLabelElement {
     let label = document()
@@ -249,29 +277,10 @@ pub fn main() -> Result<(), JsValue> {
         max: 100.0,
         step: 0.01,
         of_universe: (move |universe| universe.config.max_position_delta),
+        on_update: (move |universe, value| universe.config.max_position_delta = value),
     };
 
-    let distance_slider =
-        SliderConfig::create_slider(&distance_slider_config, &universe.lock().unwrap());
-
-    let distance_slider_universe = Arc::clone(&universe);
-    let distance_slider_on_change_handler = Closure::wrap(Box::new(move || {
-        web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
-            "You updated a slider!",
-        )));
-
-        distance_slider_universe
-            .lock()
-            .unwrap()
-            .config
-            .max_position_delta = SliderConfig::get_value(&distance_slider_config)
-    }) as Box<dyn FnMut()>);
-
-    distance_slider.set_oninput(Some(
-        distance_slider_on_change_handler.as_ref().unchecked_ref(),
-    ));
-
-    distance_slider_on_change_handler.forget();
+    let distance_slider = SliderConfig::create_slider(distance_slider_config, &universe);
 
     let color_slider_id = "color-slider";
     let color_slider_config = SliderConfig {
@@ -281,25 +290,10 @@ pub fn main() -> Result<(), JsValue> {
         max: 50.0,
         step: 1.0,
         of_universe: (move |universe| universe.config.max_color_delta as f64),
+        on_update: (move |universe, value| universe.config.max_color_delta = value as u8),
     };
 
-    let color_slider = SliderConfig::create_slider(&color_slider_config, &universe.lock().unwrap());
-
-    let color_slider_universe = Arc::clone(&universe);
-    let color_slider_on_change_handler = Closure::wrap(Box::new(move || {
-        web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
-            "You updated a slider!",
-        )));
-
-        color_slider_universe.lock().unwrap().config.max_color_delta =
-            SliderConfig::get_value(&color_slider_config) as u8
-    }) as Box<dyn FnMut()>);
-
-    color_slider.set_oninput(Some(
-        color_slider_on_change_handler.as_ref().unchecked_ref(),
-    ));
-
-    color_slider_on_change_handler.forget();
+    let color_slider = SliderConfig::create_slider(color_slider_config, &universe);
 
     let radius_slider_id = "radius-slider";
     let radius_slider_config = SliderConfig {
@@ -309,25 +303,10 @@ pub fn main() -> Result<(), JsValue> {
         max: 100.0,
         step: 1.0,
         of_universe: (move |universe| universe.config.radius),
+        on_update: (move |universe, value| universe.config.radius = value),
     };
 
-    let radius_slider =
-        SliderConfig::create_slider(&radius_slider_config, &universe.lock().unwrap());
-
-    let radius_slider_universe = Arc::clone(&universe);
-    let radius_slider_on_change_handler = Closure::wrap(Box::new(move || {
-        web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
-            "You updated a slider!",
-        )));
-
-        radius_slider_universe.lock().unwrap().config.radius =
-            SliderConfig::get_value(&radius_slider_config)
-    }) as Box<dyn FnMut()>);
-
-    radius_slider.set_oninput(Some(
-        radius_slider_on_change_handler.as_ref().unchecked_ref(),
-    ));
-    radius_slider_on_change_handler.forget();
+    let radius_slider = SliderConfig::create_slider(radius_slider_config, &universe);
 
     let add_button_id = "add-button";
     let add_button = new_button(add_button_id, "+");
