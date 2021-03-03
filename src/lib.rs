@@ -126,12 +126,12 @@ struct SliderConfig {
     id: String,
     min: f64,
     max: f64,
-    initial_value: f64,
     step: f64,
+    of_universe: fn(&Universe) -> f64,
 }
 
 impl SliderConfig {
-    fn create_slider(config: &Self) -> web_sys::HtmlInputElement {
+    fn create_slider(config: &Self, universe: &Universe) -> web_sys::HtmlInputElement {
         let slider = document()
             .create_element("input")
             .unwrap()
@@ -142,7 +142,7 @@ impl SliderConfig {
         slider.set_id(&config.id);
         slider.set_type("range");
         slider.set_min(&config.min.to_string());
-        slider.set_value(&config.initial_value.to_string());
+        slider.set_value(&(config.of_universe)(universe).to_string());
         slider.set_max(&config.max.to_string());
         slider.set_step(&config.step.to_string());
         slider.set_title(&config.title);
@@ -246,12 +246,13 @@ pub fn main() -> Result<(), JsValue> {
         id: String::from(distance_slider_id),
         title: String::from("Movement Speed"),
         min: 0.0,
-        initial_value: universe.lock().unwrap().config.max_position_delta,
         max: 100.0,
         step: 0.01,
+        of_universe: (move |universe| universe.config.max_position_delta),
     };
 
-    let distance_slider = SliderConfig::create_slider(&distance_slider_config);
+    let distance_slider =
+        SliderConfig::create_slider(&distance_slider_config, &universe.lock().unwrap());
 
     let distance_slider_universe = Arc::clone(&universe);
     let distance_slider_on_change_handler = Closure::wrap(Box::new(move || {
@@ -277,12 +278,12 @@ pub fn main() -> Result<(), JsValue> {
         id: String::from(color_slider_id),
         title: String::from("Color Speed"),
         min: 0.0,
-        initial_value: universe.lock().unwrap().config.max_color_delta as f64,
         max: 50.0,
         step: 1.0,
+        of_universe: (move |universe| universe.config.max_color_delta as f64),
     };
 
-    let color_slider = SliderConfig::create_slider(&color_slider_config);
+    let color_slider = SliderConfig::create_slider(&color_slider_config, &universe.lock().unwrap());
 
     let color_slider_universe = Arc::clone(&universe);
     let color_slider_on_change_handler = Closure::wrap(Box::new(move || {
@@ -305,12 +306,13 @@ pub fn main() -> Result<(), JsValue> {
         id: String::from(radius_slider_id),
         title: String::from("Size"),
         min: 1.0,
-        initial_value: universe.lock().unwrap().config.radius,
         max: 100.0,
         step: 1.0,
+        of_universe: (move |universe| universe.config.radius),
     };
 
-    let radius_slider = SliderConfig::create_slider(&radius_slider_config);
+    let radius_slider =
+        SliderConfig::create_slider(&radius_slider_config, &universe.lock().unwrap());
 
     let radius_slider_universe = Arc::clone(&universe);
     let radius_slider_on_change_handler = Closure::wrap(Box::new(move || {
