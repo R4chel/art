@@ -8,6 +8,8 @@ use wasm_bindgen::JsCast;
 mod circle;
 use circle::{Circle, Config, Speed, Status, Universe};
 
+const ADD_BUTTON_ID: &str = "add-button";
+
 #[derive(Copy, Clone)]
 pub enum StrokeColor {
     BLACK,
@@ -220,16 +222,59 @@ fn control_div(
     div
 }
 
-pub fn new_button(id: &str, text: &str) -> web_sys::HtmlButtonElement {
-    let button = document()
-        .create_element("button")
-        .unwrap()
-        .dyn_into::<web_sys::HtmlButtonElement>()
-        .unwrap();
+enum ButtonText {
+    STATIC(String),
+    DYNAMIC(fn(&Universe) -> String),
+}
 
-    button.set_id(id);
-    button.set_inner_text(text);
-    button
+struct ButtonConfig {
+    id: String,
+    text: ButtonText,
+    on_click: fn(&mut Universe) -> (),
+}
+
+impl ButtonConfig {
+    pub fn new_button(self, universe: &Arc<Mutex<Universe>>) -> web_sys::HtmlButtonElement {
+        let button = document()
+            .create_element("button")
+            .unwrap()
+            .dyn_into::<web_sys::HtmlButtonElement>()
+            .unwrap();
+
+        button.set_id(&self.id);
+        let inner_text: String = match &self.text {
+            ButtonText::STATIC(text) => String::from(text),
+            ButtonText::DYNAMIC(f) => (f)(&universe.lock().unwrap()),
+        };
+        button.set_inner_text(&inner_text);
+
+        let universe_clone = Arc::clone(&universe);
+        let on_click_handler = Closure::wrap(Box::new(move || {
+            web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
+                "You pushed a button!",
+            )));
+
+            (self.on_click)(&mut universe_clone.lock().unwrap());
+
+            match self.text {
+                ButtonText::STATIC(_) => {}
+                ButtonText::DYNAMIC(f) => {
+                    let button = document()
+                        .get_element_by_id(&self.id)
+                        .unwrap()
+                        .dyn_into::<web_sys::HtmlButtonElement>()
+                        .unwrap();
+
+                    button.set_inner_text(&(f)(&universe_clone.lock().unwrap()));
+                }
+            };
+        }) as Box<dyn FnMut()>);
+
+        button.set_onclick(Some(on_click_handler.as_ref().unchecked_ref()));
+        on_click_handler.forget();
+
+        button
+    }
 }
 
 fn new_checkbox(id: &str, text: &str) -> web_sys::HtmlDivElement {
@@ -308,149 +353,87 @@ pub fn main() -> Result<(), JsValue> {
 
     let radius_slider = SliderConfig::create_slider(radius_slider_config, &universe);
 
-    let add_button_id = "add-button";
-    let add_button = new_button(add_button_id, "+");
-    let add_button_universe = Arc::clone(&universe);
-    let add_button_on_click_handler = Closure::wrap(Box::new(move || {
-        web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
-            "You pushed a button!",
-        )));
-        add_button_universe.lock().unwrap().add_circle();
+    let add_button_config = ButtonConfig {
+        id: String::from(ADD_BUTTON_ID),
+        text: ButtonText::STATIC(String::from("+")),
+        on_click: (move |universe| {
+            universe.add_circle();
 
-        document()
-            .get_element_by_id(add_button_id)
-            .unwrap()
-            .set_class_name("");
-    }) as Box<dyn FnMut()>);
+            document()
+                .get_element_by_id(ADD_BUTTON_ID)
+                .unwrap()
+                .set_class_name("");
+        }),
+    };
+    let add_button = add_button_config.new_button(&universe);
 
-    add_button.set_onclick(Some(add_button_on_click_handler.as_ref().unchecked_ref()));
-    add_button_on_click_handler.forget();
+    let freeze_button_config = ButtonConfig {
+        id: String::from("freeze-button"),
+        text: ButtonText::STATIC(String::from("🧊")),
 
-    let freeze_button = new_button("freeze-button", "🧊");
-    let freeze_button_universe = Arc::clone(&universe);
-    let freeze_button_on_click_handler = Closure::wrap(Box::new(move || {
-        web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
-            "You pushed a button!",
-        )));
-        freeze_button_universe.lock().unwrap().circles.clear();
-        document()
-            .get_element_by_id(add_button_id)
-            .unwrap()
-            .set_class_name("highlight");
-    }) as Box<dyn FnMut()>);
+        on_click: (move |universe| {
+            universe.circles.clear();
+            document()
+                .get_element_by_id(ADD_BUTTON_ID)
+                .unwrap()
+                .set_class_name("highlight");
+        }),
+    };
 
-    freeze_button.set_onclick(Some(
-        freeze_button_on_click_handler.as_ref().unchecked_ref(),
-    ));
-    freeze_button_on_click_handler.forget();
+    let freeze_button = ButtonConfig::new_button(freeze_button_config, &universe);
 
     let start_stop_button_id = "start-stop-button";
-    let start_stop_button = new_button(
-        start_stop_button_id,
-        &universe.lock().unwrap().config.status.to_button_display(),
-    );
-    let start_stop_universe = Arc::clone(&universe);
-    let start_stop_button_on_click_handler = Closure::wrap(Box::new(move || {
-        web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
-            "You pushed the start stop button!",
-        )));
-        // implementation version 1 of toggling status
-        start_stop_universe.lock().unwrap().config.status.toggle();
-
-        // implementation version 2 of toggling status
-        // let mut local_universe = universe_clone_2.lock().unwrap();
-        // local_universe.config.status = match local_universe.config.status {
-        //     Status::RUNNING => Status::PAUSED,
-        //     Status::PAUSED => Status::RUNNING,
-        // }
-
-        let button = document()
-            .get_element_by_id(start_stop_button_id)
-            .unwrap()
-            .dyn_into::<web_sys::HtmlButtonElement>()
-            .unwrap();
-
-        button.set_inner_text(
-            &start_stop_universe
-                .lock()
-                .unwrap()
-                .config
-                .status
-                .to_button_display(),
-        )
-    }) as Box<dyn FnMut()>);
-
-    start_stop_button.set_onclick(Some(
-        start_stop_button_on_click_handler.as_ref().unchecked_ref(),
-    ));
-    start_stop_button_on_click_handler.forget();
+    let start_stop_button_config = ButtonConfig {
+        id: String::from(start_stop_button_id),
+        text: ButtonText::DYNAMIC(move |universe| universe.config.status.to_button_display()),
+        on_click: move |universe| {
+            universe.config.status.toggle();
+        },
+    };
+    let start_stop_button = start_stop_button_config.new_button(&universe);
 
     let speed_button_id = "speed-button";
-    let speed_button = new_button(
-        speed_button_id,
-        &universe.lock().unwrap().config.speed.to_button_display(),
-    );
+    let speed_button_config = ButtonConfig {
+        id: String::from(speed_button_id),
+        text: ButtonText::DYNAMIC(move |universe| universe.config.speed.to_button_display()),
+        on_click: (move |universe| {
+            universe.config.speed.toggle();
+        }),
+    };
+    let speed_button = speed_button_config.new_button(&universe);
 
-    let speed_universe = Arc::clone(&universe);
-    let speed_button_on_click_handler = Closure::wrap(Box::new(move || {
-        web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
-            "You pushed the speed button!",
-        )));
-
-        speed_universe.lock().unwrap().config.speed.toggle();
-
-        let button = document()
-            .get_element_by_id(speed_button_id)
-            .unwrap()
-            .dyn_into::<web_sys::HtmlButtonElement>()
-            .unwrap();
-
-        button.set_inner_text(
-            &speed_universe
-                .lock()
+    let trash_button_config = ButtonConfig {
+        id: String::from("trash-button"),
+        text: ButtonText::STATIC(String::from("🗑️")),
+        on_click: (move |universe| {
+            universe.circles.clear();
+            clear_board();
+            document()
+                .get_element_by_id(ADD_BUTTON_ID)
                 .unwrap()
-                .config
-                .speed
-                .to_button_display(),
-        )
-    }) as Box<dyn FnMut()>);
+                .set_class_name("highlight");
+        }),
+    };
+    let trash_button = trash_button_config.new_button(&universe);
 
-    speed_button.set_onclick(Some(speed_button_on_click_handler.as_ref().unchecked_ref()));
-    speed_button_on_click_handler.forget();
+    let save_button_config = ButtonConfig {
+        id: String::from("save-button"),
+        text: ButtonText::STATIC(String::from("💾")),
+        on_click: (move |_universe| {
+            let image = default_canvas().to_data_url().unwrap();
 
-    let trash_button = new_button("trash-button", "🗑️");
-    let trash_universe = Arc::clone(&universe);
-    let trash_onclick_handler = Closure::wrap(Box::new(move || {
-        trash_universe.lock().unwrap().circles.clear();
-        clear_board();
-        document()
-            .get_element_by_id(add_button_id)
-            .unwrap()
-            .set_class_name("highlight");
-    }) as Box<dyn FnMut()>);
-    trash_button.set_onclick(Some(trash_onclick_handler.as_ref().unchecked_ref()));
-    trash_onclick_handler.forget();
+            let anchor = document()
+                .create_element("a")
+                .unwrap()
+                .dyn_into::<web_sys::HtmlAnchorElement>()
+                .unwrap();
 
-    let save_button = new_button("save-button", "💾");
-    let save_onclick_handler = Closure::wrap(Box::new(move || {
-        web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(&format!(
-            "you tried saving!"
-        ))));
-
-        let image = default_canvas().to_data_url().unwrap();
-
-        let anchor = document()
-            .create_element("a")
-            .unwrap()
-            .dyn_into::<web_sys::HtmlAnchorElement>()
-            .unwrap();
-
-        anchor.set_href(&image);
-        anchor.set_download("art.png");
-        anchor.click();
-    }) as Box<dyn FnMut()>);
-    save_button.set_onclick(Some(save_onclick_handler.as_ref().unchecked_ref()));
-    save_onclick_handler.forget();
+            anchor.set_href(&image);
+            anchor.set_download("art.png");
+            anchor.click();
+        }),
+    };
+    let save_button = save_button_config.new_button(&universe);
 
     let bug_checkbox_id = "bug-checkbox";
     let bug_checkbox = new_checkbox(bug_checkbox_id, "🐛");
