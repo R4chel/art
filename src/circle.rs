@@ -31,12 +31,16 @@ impl Position {
         }
     }
 
-    fn update(&mut self, config: &Config) {
-        let x_min = f64::max(MIN_POS, self.x - config.max_position_delta);
-        let x_max = f64::min(config.width, self.x + config.max_position_delta);
+    fn update(&mut self, config: &Config, _radius: f64) {
+        // let max_position_delta = (100.0 - radius) * config.max_position_delta.powi(2)
+        //     + (2. * radius - 100.0) * config.max_position_delta;
+        // let max_position_delta = (2. * radius).powf(config.max_position_delta);
+        let max_position_delta = config.max_position_delta;
+        let x_min = f64::max(MIN_POS, self.x - max_position_delta);
+        let x_max = f64::min(config.width, self.x + max_position_delta);
 
-        let y_min = f64::max(MIN_POS, self.y - config.max_position_delta);
-        let y_max = f64::min(config.height, self.y + config.max_position_delta);
+        let y_min = f64::max(MIN_POS, self.y - max_position_delta);
+        let y_max = f64::min(config.height, self.y + max_position_delta);
         self.x = random_in_range(x_min, x_max);
         self.y = random_in_range(y_min, y_max);
     }
@@ -136,7 +140,7 @@ impl Circle {
     }
 
     pub fn update(&mut self, config: &Config) {
-        self.position.update(&config);
+        self.position.update(&config, self.radius);
         self.color.update(&config);
     }
 

@@ -248,7 +248,7 @@ pub fn main() -> Result<(), JsValue> {
         min: 0.0,
         initial_value: universe.lock().unwrap().config.max_position_delta,
         max: 100.0,
-        step: 0.1,
+        step: 0.01,
     };
 
     let distance_slider = SliderConfig::create_slider(&distance_slider_config);
