@@ -186,6 +186,7 @@ pub struct Config {
     pub max_position_delta: f64,
     pub max_color_delta: u8,
     pub radius: f64,
+    pub bug_checkbox: bool,
 }
 
 #[derive(Clone)]

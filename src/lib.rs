@@ -46,10 +46,25 @@ fn draw_circle(
     context.stroke();
 }
 
-pub fn render(universe: &Universe, canvas: &web_sys::HtmlCanvasElement, stroke_color: StrokeColor) {
+pub fn render(universe: &Universe, canvas: &web_sys::HtmlCanvasElement) {
     let context = context(&canvas);
     for circle in universe.circles.iter() {
-        draw_circle(&context, &circle, stroke_color)
+        if universe.config.bug_checkbox {
+            draw_circle(&context, &circle, StrokeColor::BLACK);
+        } else {
+        };
+        draw_circle(&context, &circle, StrokeColor::FILLCOLOR);
+    }
+}
+
+pub fn highlight(
+    universe: &Universe,
+    canvas: &web_sys::HtmlCanvasElement,
+    stroke_color: StrokeColor,
+) {
+    let context = context(&canvas);
+    for circle in universe.circles.iter() {
+        draw_circle(&context, &circle, stroke_color);
     }
 }
 
@@ -174,19 +189,6 @@ impl SliderConfig {
             .unwrap()
             .value_as_number()
     }
-
-    // fn create_handler(&'static self, universe: Arc<Mutex<Universe>>) {
-    //     let id = self.id;
-    //     let update = self.on_update;
-    //     let distance_slider_on_change_handler = Closure::wrap(Box::new(move || {
-    //         web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(&format!(
-    //             "You updated the {} slider!",
-    //             id
-    //         ))));
-
-    //         (update)(&mut universe.lock().unwrap(), self.get_value());
-    //     }) as Box<dyn FnMut()>);
-    // }
 }
 fn label(id: &str, text: &str) -> web_sys::HtmlLabelElement {
     let label = document()
@@ -209,7 +211,9 @@ fn control_div(
         .unwrap()
         .dyn_into::<web_sys::HtmlDivElement>()
         .unwrap();
+
     div.set_class_name("control");
+
     match left_label {
         None => {}
         Some(text) => {
@@ -217,6 +221,7 @@ fn control_div(
             div.append_child(&label).unwrap();
         }
     }
+
     div.append_child(&input).unwrap();
 
     div
@@ -310,6 +315,7 @@ pub fn main() -> Result<(), JsValue> {
             radius: 10.,
             max_position_delta: 6.3,
             max_color_delta: 5,
+            bug_checkbox: false,
         },
         circles: vec![],
     }));
@@ -445,14 +451,11 @@ pub fn main() -> Result<(), JsValue> {
 
     body().append_child(&start_stop_button)?;
     body().append_child(&speed_button)?;
-
     body().append_child(&freeze_button)?;
     body().append_child(&save_button)?;
     body().append_child(&trash_button)?;
-
     body().append_child(&new_circle_div)?;
     body().append_child(&bug_checkbox)?;
-
     body().append_child(&distance_slider_div)?;
     body().append_child(&(control_div(&color_slider, &color_slider_id, Some("🌈"))))?;
 
@@ -469,7 +472,8 @@ pub fn main() -> Result<(), JsValue> {
         let overlay_canvas = overlay_canvas();
         let default_canvas = default_canvas();
 
-        let bug_checkbox_value = document()
+        // TODO: update on checkbox update
+        universe.lock().unwrap().config.bug_checkbox = document()
             .get_element_by_id(bug_checkbox_id)
             .unwrap()
             .dyn_into::<web_sys::HtmlInputElement>()
@@ -478,20 +482,14 @@ pub fn main() -> Result<(), JsValue> {
 
         let mut universe = universe.lock().unwrap();
         for _ in 0..steps {
-            if bug_checkbox_value {
-                render(&universe, &default_canvas, StrokeColor::FILLCOLOR);
-                universe.tick();
-                render(&universe, &default_canvas, StrokeColor::BLACK);
-            } else {
-                universe.tick();
-                render(&universe, &default_canvas, StrokeColor::FILLCOLOR);
-            }
+            universe.tick();
+            render(&universe, &default_canvas);
         }
 
         clear_canvas(&overlay_canvas);
         match &universe.config.status {
             Status::RUNNING => {
-                render(&universe, &overlay_canvas, StrokeColor::DARKER);
+                highlight(&universe, &overlay_canvas, StrokeColor::DARKER);
             }
             Status::PAUSED => {}
         }
