@@ -10,6 +10,7 @@ mod circle;
 use circle::{Circle, CircleConfig, Config, Speed, Status, Universe};
 
 const ADD_BUTTON_ID: &str = "add-button";
+const APPLE_BUTTON_ID: &str = "apple-button";
 
 #[derive(Copy, Clone)]
 pub enum StrokeColor {
@@ -366,6 +367,8 @@ impl ButtonConfig {
                     button.set_inner_text(&(f)(&universe_clone.lock().unwrap()));
                 }
             };
+
+            indicate_next_step(universe_clone.lock().unwrap().is_empty());
         }) as Box<dyn FnMut()>);
 
         button.set_onclick(Some(on_click_handler.as_ref().unchecked_ref()));
@@ -407,6 +410,16 @@ impl CheckboxConfig {
         checkbox.set_onclick(Some(on_click_handler.as_ref().unchecked_ref()));
         on_click_handler.forget();
         div
+    }
+}
+
+fn indicate_next_step(no_circles: bool) {
+    let class_name = if no_circles { "highlight" } else { "" };
+    for button_id in vec![ADD_BUTTON_ID, APPLE_BUTTON_ID] {
+        document()
+            .get_element_by_id(&button_id)
+            .unwrap()
+            .set_class_name(class_name);
     }
 }
 
@@ -504,10 +517,6 @@ pub fn main() -> Result<(), JsValue> {
 
         on_click: (move |universe| {
             universe.circles.clear();
-            document()
-                .get_element_by_id(ADD_BUTTON_ID)
-                .unwrap()
-                .set_class_name("highlight");
         }),
     };
 
@@ -641,6 +650,8 @@ pub fn main() -> Result<(), JsValue> {
         }
 
         request_animation_frame(main_loop.borrow().as_ref().unwrap());
+
+        indicate_next_step(universe.is_empty());
     }) as Box<dyn FnMut()>));
 
     request_animation_frame(main_loop_copy.borrow().as_ref().unwrap());

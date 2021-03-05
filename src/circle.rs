@@ -173,6 +173,9 @@ impl Universe {
         }
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.circles.is_empty() && self.apples.is_empty()
+    }
     pub fn add_circle(&mut self) {
         self.circles
             .push(Circle::new(&self.config, &self.circle_config))
