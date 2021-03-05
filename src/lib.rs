@@ -151,7 +151,7 @@ struct SliderConfig {
 }
 
 impl SliderConfig {
-    fn create_slider(&'static self, universe: &Arc<Mutex<Universe>>) -> web_sys::HtmlDivElement {
+    fn create_slider(config: &Self, universe: &Arc<Mutex<Universe>>) -> web_sys::HtmlDivElement {
         let slider = document()
             .create_element("input")
             .unwrap()
@@ -159,14 +159,14 @@ impl SliderConfig {
             .unwrap();
 
         slider.set_class_name("slider");
-        slider.set_id(&self.id);
-        slider.set_name(&self.id);
+        slider.set_id(&config.id);
+        slider.set_name(&config.id);
         slider.set_type("range");
-        slider.set_min(&self.min.to_string());
-        slider.set_value(&(self.of_universe)(&universe.lock().unwrap()).to_string());
-        slider.set_max(&self.max.to_string());
-        slider.set_step(&self.step.to_string());
-        slider.set_title(&self.title);
+        slider.set_min(&config.min.to_string());
+        slider.set_value(&(config.of_universe)(&universe.lock().unwrap()).to_string());
+        slider.set_max(&config.max.to_string());
+        slider.set_step(&config.step.to_string());
+        slider.set_title(&config.title);
 
         let display = document()
             .create_element("input")
@@ -174,24 +174,25 @@ impl SliderConfig {
             .dyn_into::<web_sys::HtmlInputElement>()
             .unwrap();
 
-        let mut display_id_tmp = String::from(&self.id);
+        let mut display_id_tmp = String::from(&config.id);
         display_id_tmp.push_str("-input");
         let display_id = display_id_tmp;
+
         let display_id_clone = display_id.clone();
         display.set_id(&display_id);
         display.set_name(&display_id);
 
         display.set_type("number");
-        display.set_min(&self.min.to_string());
-        display.set_value(&(self.of_universe)(&universe.lock().unwrap()).to_string());
-        display.set_max(&self.max.to_string());
-        display.set_step(&self.step.to_string());
+        display.set_min(&config.min.to_string());
+        display.set_value(&(config.of_universe)(&universe.lock().unwrap()).to_string());
+        display.set_max(&config.max.to_string());
+        display.set_step(&config.step.to_string());
 
         let div = new_control_div();
-        match self.left_label {
+        match config.left_label {
             None => {}
             Some(ref text) => {
-                let label = label(&self.id, &text);
+                let label = label(&config.id, &text);
                 div.append_child(&label).unwrap();
             }
         }
@@ -199,17 +200,18 @@ impl SliderConfig {
         div.append_child(&slider).unwrap();
         div.append_child(&display).unwrap();
 
-        let slider_id = String::from(&self.id);
+        let slider_id = String::from(&config.id);
         let slider_universe = Arc::clone(&universe);
+        let config_clone = config.clone();
         let slider_on_change_handler = Closure::wrap(Box::new(move || {
             web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(&format!(
                 "You updated the {}!",
-                &self.id
+                &config_clone.id
             ))));
 
-            let value = self.get_value();
+            let value = config_clone.get_value();
 
-            (&self.on_update)(&mut slider_universe.lock().unwrap(), value);
+            (&config_clone.on_update)(&mut slider_universe.lock().unwrap(), value);
 
             let display = document()
                 .get_element_by_id(&display_id)
@@ -222,6 +224,8 @@ impl SliderConfig {
 
         slider.set_oninput(Some(slider_on_change_handler.as_ref().unchecked_ref()));
 
+        let display_config_clone = config.clone();
+
         let display_universe = Arc::clone(&universe);
         let display_on_change_handler = Closure::wrap(Box::new(move || {
             let value = document()
@@ -231,7 +235,7 @@ impl SliderConfig {
                 .unwrap()
                 .value_as_number();
 
-            (&self.on_update)(&mut display_universe.lock().unwrap(), value);
+            (&display_config_clone.on_update)(&mut display_universe.lock().unwrap(), value);
 
             let slider = document()
                 .get_element_by_id(&slider_id)
@@ -418,9 +422,8 @@ pub fn main() -> Result<(), JsValue> {
         circles: vec![],
     }));
 
-    static distance_slider_id: &'static str = "distance-slider";
-
-    static distance_slider_config: SliderConfig = SliderConfig {
+    let distance_slider_id = "distance-slider";
+    let distance_slider_config = SliderConfig {
         id: String::from(distance_slider_id),
         title: String::from("Movement Speed"),
 
@@ -434,8 +437,8 @@ pub fn main() -> Result<(), JsValue> {
 
     let distance_slider_div = SliderConfig::create_slider(&distance_slider_config, &universe);
 
-    static color_slider_id: String = String::from("color-slider");
-    static color_slider_config: SliderConfig = SliderConfig {
+    let color_slider_id = "color-slider";
+    let color_slider_config = SliderConfig {
         id: String::from(color_slider_id),
         title: String::from("Color Speed"),
         left_label: Some(String::from("🌈")),
@@ -448,8 +451,8 @@ pub fn main() -> Result<(), JsValue> {
 
     let color_slider_div = SliderConfig::create_slider(&color_slider_config, &universe);
 
-    static radius_slider_id: String = String::from("radius-slider");
-    static radius_slider_config: SliderConfig = SliderConfig {
+    let radius_slider_id = "radius-slider";
+    let radius_slider_config = SliderConfig {
         id: String::from(radius_slider_id),
         title: String::from("Size"),
         left_label: None,
