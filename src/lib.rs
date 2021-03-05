@@ -49,12 +49,21 @@ fn draw_circle(
 
 pub fn render(universe: &Universe, canvas: &web_sys::HtmlCanvasElement) {
     let context = context(&canvas);
+
     for circle in universe.circles.iter() {
         if universe.config.bug_checkbox {
             draw_circle(&context, &circle, StrokeColor::BLACK);
         } else {
         };
         draw_circle(&context, &circle, StrokeColor::FILLCOLOR);
+    }
+
+    for apple in universe.apples.iter() {
+        if universe.config.bug_checkbox {
+            draw_circle(&context, &apple.circle, StrokeColor::BLACK);
+        } else {
+        };
+        draw_circle(&context, &apple.circle, StrokeColor::FILLCOLOR);
     }
 }
 

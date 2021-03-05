@@ -187,8 +187,17 @@ impl Universe {
         })
     }
 
-    pub fn steps(&self) -> u8 {
-        f64::ceil(self.config.speed.steps() as f64 / self.circles.len() as f64) as u8
+    fn remaining_apple_steps(&self) -> u32 {
+        self.apples
+            .iter()
+            .max_by(|apple1, apple2| apple1.steps.cmp(&apple2.steps))
+            .map_or(0, |apple| apple.steps)
+    }
+    pub fn steps(&self) -> u32 {
+        u32::max(
+            self.remaining_apple_steps(),
+            f64::ceil(self.config.speed.steps() as f64 / self.circles.len() as f64) as u32,
+        )
     }
 }
 
