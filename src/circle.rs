@@ -182,7 +182,7 @@ impl Universe {
         self.apples.push(Apple {
             circle: Circle::new(&self.config, &self.circle_config),
             config: self.circle_config.clone(),
-            steps: 1000,
+            steps: self.config.apple_steps,
         })
     }
 
@@ -231,6 +231,7 @@ pub struct Config {
     pub status: Status,
     pub speed: Speed,
     pub radius: f64,
+    pub apple_steps: u32,
     pub bug_checkbox: bool,
 }
 
