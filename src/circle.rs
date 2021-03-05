@@ -4,6 +4,7 @@ use std::f64;
 use std::fmt::{self, Display};
 
 const MIN_POS: f64 = 0.0;
+
 #[derive(Debug, Clone)]
 pub struct Position {
     pub x: f64,
@@ -24,14 +25,14 @@ fn random_in_range(min: f64, max: f64) -> f64 {
 }
 
 impl Position {
-    fn new(config: &Config) -> Self {
+    fn new(config: &CircleConfig) -> Self {
         Position {
             x: random_in_range(MIN_POS, config.width),
             y: random_in_range(MIN_POS, config.height),
         }
     }
 
-    fn update(&mut self, config: &Config, _radius: f64) {
+    fn update(&mut self, config: &CircleConfig, _radius: f64) {
         // let max_position_delta = (100.0 - radius) * config.max_position_delta.powi(2)
         //     + (2. * radius - 100.0) * config.max_position_delta;
         // let max_position_delta = (2. * radius).powf(config.max_position_delta);
@@ -60,7 +61,7 @@ impl ColorBit {
         ColorBit(f64::round(random() * 255 as f64) as u8)
     }
 
-    fn update(&mut self, config: &Config) -> () {
+    fn update(&mut self, config: &CircleConfig) -> () {
         let min = self.0.saturating_sub(config.max_color_delta);
         let max = self.0.saturating_add(config.max_color_delta);
         self.0 = f64::floor(random() * (max - min + 1) as f64) as u8 + min;
@@ -108,7 +109,7 @@ impl Color {
         format!("rgb({}, {}, {}, {})", self.r, self.g, self.b, self.a)
     }
 
-    fn update(&mut self, config: &Config) {
+    fn update(&mut self, config: &CircleConfig) {
         self.r.update(&config);
         self.g.update(&config);
         self.b.update(&config);
@@ -131,15 +132,15 @@ pub struct Circle {
 }
 
 impl Circle {
-    pub fn new(config: &Config) -> Self {
+    pub fn new(config: &Config, circle_config: &CircleConfig) -> Self {
         Circle {
-            position: Position::new(&config),
+            position: Position::new(&circle_config),
             color: Color::new(),
             radius: config.radius,
         }
     }
 
-    pub fn update(&mut self, config: &Config) {
+    pub fn update(&mut self, config: &CircleConfig) {
         self.position.update(&config, self.radius);
         self.color.update(&config);
     }
@@ -152,15 +153,19 @@ impl Circle {
 #[derive(Clone)]
 pub struct Universe {
     pub config: Config,
+    pub circle_config: CircleConfig,
     pub circles: Vec<Circle>,
+    pub apples: Vec<Apple>,
 }
 
 impl Universe {
     pub fn tick(&mut self) {
+        self.apples.drain_filter(|apple| Apple::update(apple));
+
         match self.config.status {
             Status::RUNNING => {
                 for circle in self.circles.iter_mut() {
-                    circle.update(&self.config)
+                    circle.update(&self.circle_config)
                 }
             }
 
@@ -169,7 +174,17 @@ impl Universe {
     }
 
     pub fn add_circle(&mut self) {
-        self.circles.push(Circle::new(&self.config))
+        self.circles
+            .push(Circle::new(&self.config, &self.circle_config))
+    }
+
+    pub fn add_apple(&mut self) {
+        self.apples.push(Apple {
+            circle: Circle::new(&self.config, &self.circle_config),
+
+            config: self.circle_config.clone(),
+            steps: 1000,
+        })
     }
 
     pub fn steps(&self) -> u8 {
@@ -178,18 +193,38 @@ impl Universe {
 }
 
 #[derive(Clone)]
-pub struct Config {
-    pub status: Status,
-    pub speed: Speed,
+pub struct Apple {
+    pub circle: Circle,
+    pub config: CircleConfig,
+    pub steps: u32,
+}
+
+impl Apple {
+    pub fn update(&mut self) -> bool {
+        self.circle.update(&self.config);
+        self.steps -= 1;
+        self.steps == 0
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct CircleConfig {
     pub width: f64,
     pub height: f64,
     pub max_position_delta: f64,
     pub max_color_delta: u8,
+    // pub radius: f64,
+}
+
+#[derive(Clone)]
+pub struct Config {
+    pub status: Status,
+    pub speed: Speed,
     pub radius: f64,
     pub bug_checkbox: bool,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub enum Status {
     RUNNING,
     PAUSED,

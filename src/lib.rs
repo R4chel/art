@@ -1,3 +1,4 @@
+#![feature(drain_filter)]
 use std::cell::RefCell;
 use std::f64;
 use std::rc::Rc;
@@ -6,7 +7,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
 mod circle;
-use circle::{Circle, Config, Speed, Status, Universe};
+use circle::{Circle, CircleConfig, Config, Speed, Status, Universe};
 
 const ADD_BUTTON_ID: &str = "add-button";
 
@@ -399,6 +400,7 @@ impl CheckboxConfig {
         div
     }
 }
+
 // Called when the wasm module is instantiated
 #[wasm_bindgen(start)]
 pub fn main() -> Result<(), JsValue> {
@@ -414,14 +416,17 @@ pub fn main() -> Result<(), JsValue> {
         config: Config {
             status: Status::RUNNING,
             speed: Speed::NORMAL,
+            bug_checkbox: false,
+            radius: 10.,
+        },
+        circle_config: CircleConfig {
             height: height as f64,
             width: width as f64,
-            radius: 10.,
             max_position_delta: 6.3,
             max_color_delta: 5,
-            bug_checkbox: false,
         },
         circles: vec![],
+        apples: vec![],
     }));
 
     let distance_slider_id = "distance-slider";
@@ -433,8 +438,8 @@ pub fn main() -> Result<(), JsValue> {
         min: 0.0,
         max: 100.0,
         step: 0.01,
-        of_universe: (move |universe| universe.config.max_position_delta),
-        on_update: (move |universe, value| universe.config.max_position_delta = value),
+        of_universe: (move |universe| universe.circle_config.max_position_delta),
+        on_update: (move |universe, value| universe.circle_config.max_position_delta = value),
     };
 
     let distance_slider_div = SliderConfig::create_slider(&distance_slider_config, &universe);
@@ -447,8 +452,8 @@ pub fn main() -> Result<(), JsValue> {
         min: 0.0,
         max: 50.0,
         step: 1.0,
-        of_universe: (move |universe| universe.config.max_color_delta as f64),
-        on_update: (move |universe, value| universe.config.max_color_delta = value as u8),
+        of_universe: (move |universe| universe.circle_config.max_color_delta as f64),
+        on_update: (move |universe, value| universe.circle_config.max_color_delta = value as u8),
     };
 
     let color_slider_div = SliderConfig::create_slider(&color_slider_config, &universe);
@@ -497,6 +502,17 @@ pub fn main() -> Result<(), JsValue> {
     };
 
     let freeze_button = ButtonConfig::new_button(freeze_button_config, &universe);
+
+    let apple_button_config = ButtonConfig {
+        id: String::from("apple-button"),
+        text: ButtonText::STATIC(String::from("🍏")),
+
+        on_click: (move |universe| {
+            universe.add_apple();
+        }),
+    };
+
+    let apple_button = ButtonConfig::new_button(apple_button_config, &universe);
 
     let start_stop_button_id = "start-stop-button";
     let start_stop_button_config = ButtonConfig {
@@ -569,6 +585,8 @@ pub fn main() -> Result<(), JsValue> {
     body().append_child(&bug_checkbox)?;
     body().append_child(&distance_slider_div)?;
     body().append_child(&color_slider_div)?;
+
+    body().append_child(&apple_button)?;
 
     universe.lock().unwrap().add_circle();
     universe.lock().unwrap().add_circle();
