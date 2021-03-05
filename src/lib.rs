@@ -518,6 +518,7 @@ pub fn main() -> Result<(), JsValue> {
 
         on_click: (move |universe| {
             universe.add_apple();
+            universe.config.status = Status::PAUSED;
         }),
     };
 
@@ -548,11 +549,12 @@ pub fn main() -> Result<(), JsValue> {
         text: ButtonText::STATIC(String::from("🗑️")),
         on_click: (move |universe| {
             universe.circles.clear();
+            universe.apples.clear();
             clear_board();
-            document()
-                .get_element_by_id(ADD_BUTTON_ID)
-                .unwrap()
-                .set_class_name("highlight");
+            // document()
+            //     .get_element_by_id(ADD_BUTTON_ID)
+            //     .unwrap()
+            //     .set_class_name("highlight");
         }),
     };
     let trash_button = trash_button_config.new_button(&universe);

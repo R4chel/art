@@ -181,7 +181,6 @@ impl Universe {
     pub fn add_apple(&mut self) {
         self.apples.push(Apple {
             circle: Circle::new(&self.config, &self.circle_config),
-
             config: self.circle_config.clone(),
             steps: 1000,
         })
@@ -193,10 +192,12 @@ impl Universe {
             .max_by(|apple1, apple2| apple1.steps.cmp(&apple2.steps))
             .map_or(0, |apple| apple.steps)
     }
+
     pub fn steps(&self) -> u32 {
         u32::max(
             self.remaining_apple_steps(),
-            f64::ceil(self.config.speed.steps() as f64 / self.circles.len() as f64) as u32,
+            f64::ceil(self.config.speed.steps() as f64 / (f64::max(1.0, self.circles.len() as f64)))
+                as u32,
         )
     }
 }
