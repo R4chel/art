@@ -447,7 +447,7 @@ pub fn main() -> Result<(), JsValue> {
         left_label: Some(String::from("↔")),
         min: 0.0,
         max: 100.0,
-        step: 0.01,
+        step: 0.1,
         of_universe: (move |universe| universe.circle_config.max_position_delta),
         on_update: (move |universe, value| universe.circle_config.max_position_delta = value),
     };
