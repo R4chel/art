@@ -146,10 +146,11 @@ struct SliderConfig {
     step: f64,
     of_universe: fn(&Universe) -> f64,
     on_update: fn(&mut Universe, f64) -> (),
+    left_label: Option<String>,
 }
 
 impl SliderConfig {
-    fn create_slider(config: Self, universe: &Arc<Mutex<Universe>>) -> web_sys::HtmlInputElement {
+    fn create_slider(config: Self, universe: &Arc<Mutex<Universe>>) -> web_sys::HtmlDivElement {
         let slider = document()
             .create_element("input")
             .unwrap()
@@ -158,6 +159,7 @@ impl SliderConfig {
 
         slider.set_class_name("slider");
         slider.set_id(&config.id);
+        slider.set_name(&config.id);
         slider.set_type("range");
         slider.set_min(&config.min.to_string());
         slider.set_value(&(config.of_universe)(&universe.lock().unwrap()).to_string());
@@ -165,20 +167,70 @@ impl SliderConfig {
         slider.set_step(&config.step.to_string());
         slider.set_title(&config.title);
 
-        let universe_clone = Arc::clone(&universe);
+        let display = document()
+            .create_element("input")
+            .unwrap()
+            .dyn_into::<web_sys::HtmlInputElement>()
+            .unwrap();
+
+        let mut display_id_tmp = String::from(&config.id);
+        display_id_tmp.push_str("-input");
+        let display_id = display_id_tmp;
+        display.set_id(&display_id);
+        display.set_name(&display_id);
+
+        display.set_type("number");
+        display.set_min(&config.min.to_string());
+        display.set_value(&(config.of_universe)(&universe.lock().unwrap()).to_string());
+        display.set_max(&config.max.to_string());
+        display.set_step(&config.step.to_string());
+
+        let div = new_control_div();
+        match config.left_label {
+            None => {}
+            Some(ref text) => {
+                let label = label(&config.id, &text);
+                div.append_child(&label).unwrap();
+            }
+        }
+
+        div.append_child(&slider).unwrap();
+        div.append_child(&display).unwrap();
+
+        let slider_universe = Arc::clone(&universe);
         let on_change_handler = Closure::wrap(Box::new(move || {
             web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(&format!(
-                "You updated the {} slider!",
+                "You updated the {}!",
                 &config.id
             ))));
 
-            (&config.on_update)(&mut universe_clone.lock().unwrap(), config.get_value());
+            web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(&format!(
+                "This is hard {} !",
+                &display_id
+            ))));
+            let value = config.get_value();
+
+            (&config.on_update)(&mut slider_universe.lock().unwrap(), value);
+
+            web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(&format!("Here1"))));
+
+            let display = document()
+                .get_element_by_id(&display_id)
+                .unwrap()
+                .dyn_into::<web_sys::HtmlInputElement>()
+                .unwrap();
+
+            web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(&format!("Here2"))));
+            display.set_value(&value.to_string());
+
+            web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(&format!("Here3"))));
         }) as Box<dyn FnMut()>);
 
         slider.set_oninput(Some(on_change_handler.as_ref().unchecked_ref()));
 
         on_change_handler.forget();
-        slider
+
+        div
     }
 
     fn get_value(&self) -> f64 {
@@ -199,6 +251,17 @@ fn label(id: &str, text: &str) -> web_sys::HtmlLabelElement {
     label.set_html_for(id);
     label.set_inner_text(&text);
     label
+}
+
+fn new_control_div() -> web_sys::HtmlDivElement {
+    let div = document()
+        .create_element("div")
+        .unwrap()
+        .dyn_into::<web_sys::HtmlDivElement>()
+        .unwrap();
+
+    div.set_class_name("control");
+    div
 }
 
 fn control_div(
@@ -345,6 +408,8 @@ pub fn main() -> Result<(), JsValue> {
     let distance_slider_config = SliderConfig {
         id: String::from(distance_slider_id),
         title: String::from("Movement Speed"),
+
+        left_label: Some(String::from("↔")),
         min: 0.0,
         max: 100.0,
         step: 0.01,
@@ -352,12 +417,13 @@ pub fn main() -> Result<(), JsValue> {
         on_update: (move |universe, value| universe.config.max_position_delta = value),
     };
 
-    let distance_slider = SliderConfig::create_slider(distance_slider_config, &universe);
+    let distance_slider_div = SliderConfig::create_slider(distance_slider_config, &universe);
 
     let color_slider_id = "color-slider";
     let color_slider_config = SliderConfig {
         id: String::from(color_slider_id),
         title: String::from("Color Speed"),
+        left_label: Some(String::from("🌈")),
         min: 0.0,
         max: 50.0,
         step: 1.0,
@@ -365,20 +431,19 @@ pub fn main() -> Result<(), JsValue> {
         on_update: (move |universe, value| universe.config.max_color_delta = value as u8),
     };
 
-    let color_slider = SliderConfig::create_slider(color_slider_config, &universe);
+    let color_slider_div = SliderConfig::create_slider(color_slider_config, &universe);
 
     let radius_slider_id = "radius-slider";
     let radius_slider_config = SliderConfig {
         id: String::from(radius_slider_id),
         title: String::from("Size"),
+        left_label: None,
         min: 1.0,
         max: 100.0,
         step: 1.0,
         of_universe: (move |universe| universe.config.radius),
         on_update: (move |universe, value| universe.config.radius = value),
     };
-
-    let radius_slider = SliderConfig::create_slider(radius_slider_config, &universe);
 
     let add_button_config = ButtonConfig {
         id: String::from(ADD_BUTTON_ID),
@@ -393,6 +458,10 @@ pub fn main() -> Result<(), JsValue> {
         }),
     };
     let add_button = add_button_config.new_button(&universe);
+
+    let new_circle_div = SliderConfig::create_slider(radius_slider_config, &universe);
+
+    new_circle_div.append_child(&add_button)?;
 
     let freeze_button_config = ButtonConfig {
         id: String::from("freeze-button"),
@@ -470,10 +539,6 @@ pub fn main() -> Result<(), JsValue> {
         }),
     };
     let bug_checkbox = bug_checkbox_config.new_checkbox(&universe);
-    let new_circle_div = control_div(&radius_slider, &radius_slider_id, None);
-    new_circle_div.append_child(&add_button)?;
-
-    let distance_slider_div = control_div(&distance_slider, &distance_slider_id, Some("↔"));
 
     body().append_child(&start_stop_button)?;
     body().append_child(&speed_button)?;
@@ -483,7 +548,7 @@ pub fn main() -> Result<(), JsValue> {
     body().append_child(&new_circle_div)?;
     body().append_child(&bug_checkbox)?;
     body().append_child(&distance_slider_div)?;
-    body().append_child(&(control_div(&color_slider, &color_slider_id, Some("🌈"))))?;
+    body().append_child(&color_slider_div)?;
 
     universe.lock().unwrap().add_circle();
     universe.lock().unwrap().add_circle();
