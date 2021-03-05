@@ -282,19 +282,40 @@ impl ButtonConfig {
     }
 }
 
-fn new_checkbox(id: &str, text: &str) -> web_sys::HtmlDivElement {
-    let checkbox = document()
-        .create_element("input")
-        .unwrap()
-        .dyn_into::<web_sys::HtmlInputElement>()
-        .unwrap();
-
-    checkbox.set_id(&id);
-    checkbox.set_type("checkbox");
-
-    control_div(&checkbox, id, Some(&text))
+struct CheckboxConfig {
+    id: String,
+    text: String,
+    on_click: fn(&mut Universe, bool) -> (),
 }
 
+impl CheckboxConfig {
+    fn new_checkbox(self, universe: &Arc<Mutex<Universe>>) -> web_sys::HtmlDivElement {
+        let checkbox = document()
+            .create_element("input")
+            .unwrap()
+            .dyn_into::<web_sys::HtmlInputElement>()
+            .unwrap();
+
+        checkbox.set_id(&self.id);
+        checkbox.set_type("checkbox");
+
+        let div = control_div(&checkbox, &self.id, Some(&self.text));
+        let universe_clone = Arc::clone(&universe);
+        let on_click_handler = Closure::wrap(Box::new(move || {
+            let is_checked = document()
+                .get_element_by_id(&self.id)
+                .unwrap()
+                .dyn_into::<web_sys::HtmlInputElement>()
+                .unwrap()
+                .checked();
+            (self.on_click)(&mut universe_clone.lock().unwrap(), is_checked);
+        }) as Box<dyn FnMut()>);
+
+        checkbox.set_onclick(Some(on_click_handler.as_ref().unchecked_ref()));
+        on_click_handler.forget();
+        div
+    }
+}
 // Called when the wasm module is instantiated
 #[wasm_bindgen(start)]
 pub fn main() -> Result<(), JsValue> {
@@ -441,9 +462,14 @@ pub fn main() -> Result<(), JsValue> {
     };
     let save_button = save_button_config.new_button(&universe);
 
-    let bug_checkbox_id = "bug-checkbox";
-    let bug_checkbox = new_checkbox(bug_checkbox_id, "🐛");
-
+    let bug_checkbox_config = CheckboxConfig {
+        id: String::from("bug-checkbox"),
+        text: String::from("🐛"),
+        on_click: (move |universe, value| {
+            universe.config.bug_checkbox = value;
+        }),
+    };
+    let bug_checkbox = bug_checkbox_config.new_checkbox(&universe);
     let new_circle_div = control_div(&radius_slider, &radius_slider_id, None);
     new_circle_div.append_child(&add_button)?;
 
@@ -471,14 +497,6 @@ pub fn main() -> Result<(), JsValue> {
 
         let overlay_canvas = overlay_canvas();
         let default_canvas = default_canvas();
-
-        // TODO: update on checkbox update
-        universe.lock().unwrap().config.bug_checkbox = document()
-            .get_element_by_id(bug_checkbox_id)
-            .unwrap()
-            .dyn_into::<web_sys::HtmlInputElement>()
-            .unwrap()
-            .checked();
 
         let mut universe = universe.lock().unwrap();
         for _ in 0..steps {
