@@ -427,6 +427,7 @@ pub fn main() -> Result<(), JsValue> {
             speed: Speed::NORMAL,
             bug_checkbox: false,
             radius: 10.,
+            apple_steps: 1000,
         },
         circle_config: CircleConfig {
             height: height as f64,
@@ -512,17 +513,30 @@ pub fn main() -> Result<(), JsValue> {
 
     let freeze_button = ButtonConfig::new_button(freeze_button_config, &universe);
 
+    let apple_steps_slider_config = SliderConfig {
+        id: String::from("apple-steps-slider"),
+        title: String::from("Steps"),
+        left_label: Some(String::from("👣")),
+        min: 0.0,
+        max: 10000.0,
+        step: 100.0,
+        of_universe: (move |universe| universe.config.apple_steps as f64),
+        on_update: (move |universe, value| universe.config.apple_steps = value as u32),
+    };
+
     let apple_button_config = ButtonConfig {
         id: String::from("apple-button"),
         text: ButtonText::STATIC(String::from("🍏")),
 
         on_click: (move |universe| {
             universe.add_apple();
-            universe.config.status = Status::PAUSED;
         }),
     };
 
+    let new_apple_div = SliderConfig::create_slider(&apple_steps_slider_config, &universe);
+
     let apple_button = ButtonConfig::new_button(apple_button_config, &universe);
+    new_apple_div.append_child(&apple_button)?;
 
     let start_stop_button_id = "start-stop-button";
     let start_stop_button_config = ButtonConfig {
@@ -597,7 +611,7 @@ pub fn main() -> Result<(), JsValue> {
     body().append_child(&distance_slider_div)?;
     body().append_child(&color_slider_div)?;
 
-    body().append_child(&apple_button)?;
+    body().append_child(&new_apple_div)?;
 
     universe.lock().unwrap().add_circle();
     universe.lock().unwrap().add_circle();
