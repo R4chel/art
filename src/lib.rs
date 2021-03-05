@@ -248,6 +248,8 @@ impl SliderConfig {
 
         display.set_oninput(Some(display_on_change_handler.as_ref().unchecked_ref()));
 
+        slider_on_change_handler.forget();
+        display_on_change_handler.forget();
         div
     }
 
