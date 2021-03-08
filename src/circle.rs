@@ -1,4 +1,3 @@
-use hsl::HSL;
 use js_sys::Math::random as js_math_random;
 use std::f64;
 use std::fmt::{self, Display};
@@ -117,17 +116,118 @@ impl RGBColor {
     }
 
     pub fn to_slightly_darker_color(&self) -> String {
-        let mut hsl = HSL::from_rgb(&[self.r.0, self.g.0, self.b.0]);
-        hsl.l = f64::max(0.0, hsl.l - 0.1);
-        let (r, g, b) = hsl.to_rgb();
-        format!("rgb({}, {}, {})", r, g, b)
+        let mut hsl = HSL::from_rgb(&self);
+        hsl.lightness = f64::max(0.0, hsl.lightness - 0.1);
+        format!("hsl({}, {}, {})", hsl.hue.0, hsl.saturation, hsl.lightness)
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Hue(f64);
+
+impl Hue {
+    pub fn update(&mut self, config: &CircleConfig) {
+        let max_color_delta = config.max_color_delta as f64;
+        self.0 = random_in_range(self.0 - max_color_delta, self.0 + max_color_delta) % 360.0
+    }
+}
+#[derive(Debug, Clone, Copy)]
+pub struct HSL {
+    hue: Hue,
+    saturation: f64,
+    lightness: f64,
+}
+
+impl HSL {
+    pub fn update(&mut self, config: &CircleConfig) {
+        self.hue.update(&config);
+    }
+
+    pub fn to_string(&self) -> String {
+        format!(
+            "hsl({}, {}, {})",
+            self.hue.0, self.saturation, self.lightness
+        )
+    }
+    pub fn to_slightly_darker_color(self) -> Self {
+        Self {
+            lightness: f64::max(0.0, self.lightness - 0.1),
+            ..self
+        }
+    }
+
+    fn from_rgb(rgb: &RGBColor) -> HSL {
+        let r = rgb.r.0 as f64 / 255.0;
+        let g = rgb.g.0 as f64 / 255.0;
+        let b = rgb.b.0 as f64 / 255.0;
+        let c_max = f64::max(r, f64::max(g, b));
+        let c_min = f64::min(r, f64::min(g, b));
+        let delta = c_max - c_min;
+        let hue = if delta == 0.0 {
+            0.0
+        } else {
+            if c_max == r {
+                60.0 * (0.0 + (g - b) / delta)
+            } else {
+                if c_max == g {
+                    60.0 * (2.0 + (b - r) / delta)
+                } else {
+                    60.0 * (4.0 + (r - g) / delta)
+                }
+            }
+        };
+        let saturation = if c_max == 0.0 { 0.0 } else { delta / c_max };
+        let l = (c_max + c_min) / 2.0;
+        let lightness = if l == 0.0 || l == 1.0 {
+            0.0
+        } else {
+            (c_max - l) / f64::min(l, 1.0 - l)
+        };
+        HSL {
+            hue: Hue(hue),
+            saturation,
+            lightness,
+        }
     }
 }
 
 #[derive(Debug, Clone)]
+pub enum Color {
+    RGB(RGBColor),
+    HSL(HSL),
+}
+
+impl Color {
+    pub fn to_slightly_darker_color(&self) -> String {
+        let hsl = match self {
+            Color::HSL(hsl) => *hsl,
+            Color::RGB(rgb) => HSL::from_rgb(&rgb),
+        };
+        hsl.to_slightly_darker_color().to_string()
+    }
+
+    pub fn new() -> Self {
+        Color::RGB(RGBColor::new())
+    }
+
+    pub fn update(&mut self, config: &CircleConfig) {
+        match self {
+            Color::RGB(rgb) => rgb.update(&config),
+            Color::HSL(hsl) => hsl.update(&config),
+        }
+    }
+
+    pub fn to_string(&self) -> String {
+        match self {
+            Color::RGB(rgb) => rgb.to_rgba(),
+            Color::HSL(hsl) => hsl.to_string(),
+        }
+    }
+}
+#[derive(Debug, Clone)]
 pub struct Circle {
     pub position: Position,
-    pub color: RGBColor,
+    pub color: Color,
     pub radius: f64,
 }
 
@@ -135,7 +235,7 @@ impl Circle {
     pub fn new(config: &Config, circle_config: &CircleConfig) -> Self {
         Circle {
             position: Position::new(&circle_config),
-            color: RGBColor::new(),
+            color: Color::new(),
             radius: config.radius,
         }
     }
@@ -146,7 +246,7 @@ impl Circle {
     }
 
     pub fn color(&self) -> String {
-        self.color.to_rgba()
+        self.color.to_string()
     }
 }
 
