@@ -88,16 +88,16 @@ impl Opacity {
 }
 
 #[derive(Clone, Debug)]
-pub struct Color {
+pub struct RGBColor {
     r: ColorBit,
     g: ColorBit,
     b: ColorBit,
     a: Opacity,
 }
 
-impl Color {
+impl RGBColor {
     fn new() -> Self {
-        Color {
+        RGBColor {
             r: ColorBit::rand(),
             g: ColorBit::rand(),
             b: ColorBit::rand(),
@@ -127,7 +127,7 @@ impl Color {
 #[derive(Debug, Clone)]
 pub struct Circle {
     pub position: Position,
-    pub color: Color,
+    pub color: RGBColor,
     pub radius: f64,
 }
 
@@ -135,7 +135,7 @@ impl Circle {
     pub fn new(config: &Config, circle_config: &CircleConfig) -> Self {
         Circle {
             position: Position::new(&circle_config),
-            color: Color::new(),
+            color: RGBColor::new(),
             radius: config.radius,
         }
     }
