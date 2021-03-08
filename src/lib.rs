@@ -27,6 +27,7 @@ fn draw_circle(
     scale: f64,
 ) {
     let color = JsValue::from_str(&circle.color());
+
     context.set_fill_style(&color);
     context.begin_path();
     let stroke_style = match stroke_color {

@@ -23,6 +23,12 @@ fn random_in_range(min: f64, max: f64) -> f64 {
     (random() * (max - min)) + min
 }
 
+fn saturating_random_in_range(current: f64, delta: f64, min: f64, max: f64) -> f64 {
+    let min = f64::max(min, current - delta);
+    let max = f64::min(max, current + delta);
+    random_in_range(min, max)
+}
+
 impl Position {
     fn new(config: &CircleConfig) -> Self {
         Position {
@@ -146,19 +152,26 @@ impl HSL {
         HSL {
             hue: Hue::new(),
             saturation: random(),
-            lightness: 1.0,
+            lightness: random(),
         }
     }
+
     pub fn update(&mut self, config: &CircleConfig) {
         self.hue.update(&config);
+        let delta = config.max_color_delta as f64 / 360.;
+        self.saturation = saturating_random_in_range(self.saturation, delta, 0.0, 1.0);
+        self.lightness = saturating_random_in_range(self.lightness, delta, 0.0, 1.0);
     }
 
     pub fn to_string(&self) -> String {
         format!(
-            "hsl({}, {}, {})",
-            self.hue.0, self.saturation, self.lightness
+            "hsl({:.3}, {:.4}%, {:.4}%)",
+            self.hue.0,
+            self.saturation * 100.,
+            self.lightness * 100.0
         )
     }
+
     pub fn to_slightly_darker_color(self) -> Self {
         Self {
             lightness: f64::max(0.0, self.lightness - 0.1),
@@ -207,6 +220,15 @@ pub enum Color {
     HSL(HSL),
 }
 
+impl Display for Color {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let string = match self {
+            Color::RGB(rgb) => rgb.to_rgba(),
+            Color::HSL(hsl) => hsl.to_string(),
+        };
+        write!(f, "{}", string)
+    }
+}
 impl Color {
     pub fn to_slightly_darker_color(&self) -> String {
         let hsl = match self {
