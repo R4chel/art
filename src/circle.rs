@@ -73,7 +73,7 @@ impl ColorBit {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Copy)]
 struct Opacity(f64);
 
 impl Display for Opacity {
@@ -145,6 +145,7 @@ pub struct HSL {
     hue: Hue,
     saturation: f64,
     lightness: f64,
+    opacity: Opacity,
 }
 
 impl HSL {
@@ -153,22 +154,33 @@ impl HSL {
             hue: Hue::new(),
             saturation: random(),
             lightness: random(),
+            opacity: Opacity::rand(),
         }
     }
 
     pub fn update(&mut self, config: &CircleConfig) {
         self.hue.update(&config);
+        self.opacity.update();
         let delta = config.max_color_delta as f64 / 360.;
         self.saturation = saturating_random_in_range(self.saturation, delta, 0.0, 1.0);
         self.lightness = saturating_random_in_range(self.lightness, delta, 0.0, 1.0);
     }
 
-    pub fn to_string(&self) -> String {
+    pub fn to_hsl(&self) -> String {
         format!(
             "hsl({:.3}, {:.4}%, {:.4}%)",
             self.hue.0,
             self.saturation * 100.,
             self.lightness * 100.0
+        )
+    }
+    pub fn to_hsla(&self) -> String {
+        format!(
+            "hsl({:.3}, {:.4}%, {:.4}%, {:3})",
+            self.hue.0,
+            self.saturation * 100.,
+            self.lightness * 100.0,
+            self.opacity
         )
     }
 
@@ -210,6 +222,7 @@ impl HSL {
             hue: Hue(hue),
             saturation,
             lightness,
+            opacity: rgb.a,
         }
     }
 }
@@ -220,22 +233,13 @@ pub enum Color {
     HSL(HSL),
 }
 
-impl Display for Color {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let string = match self {
-            Color::RGB(rgb) => rgb.to_rgba(),
-            Color::HSL(hsl) => hsl.to_string(),
-        };
-        write!(f, "{}", string)
-    }
-}
 impl Color {
     pub fn to_slightly_darker_color(&self) -> String {
         let hsl = match self {
             Color::HSL(hsl) => *hsl,
             Color::RGB(rgb) => HSL::from_rgb(&rgb),
         };
-        hsl.to_slightly_darker_color().to_string()
+        hsl.to_slightly_darker_color().to_hsl()
     }
 
     pub fn new(color_mode: &ColorMode) -> Self {
@@ -255,7 +259,8 @@ impl Color {
     pub fn to_string(&self) -> String {
         match self {
             Color::RGB(rgb) => rgb.to_rgba(),
-            Color::HSL(hsl) => hsl.to_string(),
+
+            Color::HSL(hsl) => hsl.to_hsla(),
         }
     }
 }
