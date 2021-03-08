@@ -7,7 +7,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
 mod circle;
-use circle::{Circle, CircleConfig, Config, Speed, Status, Universe};
+use circle::{Circle, CircleConfig, ColorMode, Config, Speed, Status, Universe};
 
 const ADD_BUTTON_ID: &str = "add-button";
 const APPLE_BUTTON_ID: &str = "apple-button";
@@ -473,6 +473,7 @@ pub fn main() -> Result<(), JsValue> {
             apple_steps: 1000,
             initial_height: height as f64,
             initial_width: width as f64,
+            color_mode: ColorMode::RGB,
         },
         circle_config: CircleConfig {
             height: height as f64,
@@ -625,6 +626,16 @@ pub fn main() -> Result<(), JsValue> {
     };
     let speed_button = speed_button_config.new_button(&universe);
 
+    let color_mode_button_id = "color-mode-button";
+    let color_mode_button_config = ButtonConfig {
+        id: String::from(color_mode_button_id),
+        text: ButtonText::DYNAMIC(move |universe| universe.config.color_mode.to_button_display()),
+        on_click: (move |universe| {
+            universe.config.color_mode.toggle();
+        }),
+    };
+    let color_mode_button = color_mode_button_config.new_button(&universe);
+
     let trash_button_config = ButtonConfig {
         id: String::from("trash-button"),
         text: ButtonText::STATIC(String::from("🗑️")),
@@ -679,6 +690,7 @@ pub fn main() -> Result<(), JsValue> {
     body().append_child(&distance_slider_div)?;
     body().append_child(&color_slider_div)?;
     body().append_child(&scale_slider_div)?;
+    body().append_child(&color_mode_button)?;
 
     universe.lock().unwrap().add_circle();
     universe.lock().unwrap().add_circle();

@@ -126,6 +126,9 @@ impl RGBColor {
 pub struct Hue(f64);
 
 impl Hue {
+    pub fn new() -> Self {
+        Hue(random_in_range(0.0, 360.0))
+    }
     pub fn update(&mut self, config: &CircleConfig) {
         let max_color_delta = config.max_color_delta as f64;
         self.0 = random_in_range(self.0 - max_color_delta, self.0 + max_color_delta) % 360.0
@@ -139,6 +142,13 @@ pub struct HSL {
 }
 
 impl HSL {
+    pub fn new() -> Self {
+        HSL {
+            hue: Hue::new(),
+            saturation: random(),
+            lightness: 1.0,
+        }
+    }
     pub fn update(&mut self, config: &CircleConfig) {
         self.hue.update(&config);
     }
@@ -206,8 +216,11 @@ impl Color {
         hsl.to_slightly_darker_color().to_string()
     }
 
-    pub fn new() -> Self {
-        Color::RGB(RGBColor::new())
+    pub fn new(color_mode: &ColorMode) -> Self {
+        match color_mode {
+            ColorMode::RGB => Color::RGB(RGBColor::new()),
+            ColorMode::HSL => Color::HSL(HSL::new()),
+        }
     }
 
     pub fn update(&mut self, config: &CircleConfig) {
@@ -235,7 +248,7 @@ impl Circle {
     pub fn new(config: &Config, circle_config: &CircleConfig) -> Self {
         Circle {
             position: Position::new(&circle_config),
-            color: Color::new(),
+            color: Color::new(&config.color_mode),
             radius: config.radius,
         }
     }
@@ -337,6 +350,7 @@ pub struct Config {
     pub radius: f64,
     pub apple_steps: u32,
     pub bug_checkbox: bool,
+    pub color_mode: ColorMode,
     pub initial_height: f64,
     pub initial_width: f64,
 }
@@ -400,43 +414,31 @@ impl Speed {
     }
 }
 
-// #[derive(Copy, Clone)]
-// pub enum SizeMode {
-//     NORMAL,
-//     GIANT,
-// }
+#[derive(Copy, Clone)]
+pub enum ColorMode {
+    RGB,
+    HSL,
+}
 
-// impl SizeMode {
-//     pub fn next(self) -> SizeMode {
-//         match self {
-//             SizeMode::GIANT => SizeMode::NORMAL,
-//             SizeMode::NORMAL => SizeMode::GIANT,
-//         }
-//     }
+impl ColorMode {
+    pub fn next(self) -> ColorMode {
+        match self {
+            ColorMode::RGB => ColorMode::HSL,
+            ColorMode::HSL => ColorMode::RGB,
+        }
+    }
+    pub fn toggle(&mut self) {
+        *self = self.next()
+    }
 
-//     fn toggle(&mut self, circle_config: &mut CircleConfig, normal_width: f64, normal_height: f64) {
-//         *self = self.next();
-//         match self {
-//             SizeMode::GIANT => {
-//                 circle_config.width = 15000.0;
-//                 circle_config.height = 15000.0;
-//             }
+    fn display(self) -> String {
+        String::from(match self {
+            ColorMode::RGB => "R",
+            ColorMode::HSL => "H",
+        })
+    }
 
-//             SizeMode::NORMAL => {
-//                 circle_config.width = normal_width;
-//                 circle_config.height = normal_height;
-//             }
-//         }
-//     }
-
-//     fn display(self) -> String {
-//         String::from(match self {
-//             SizeMode::GIANT => "🐘",
-//             SizeMode::NORMAL => "🐁",
-//         })
-//     }
-
-//     pub fn to_button_display(self) -> String {
-//         self.next().display()
-//     }
-// }
+    pub fn to_button_display(self) -> String {
+        self.next().display()
+    }
+}
