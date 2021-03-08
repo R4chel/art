@@ -500,7 +500,7 @@ pub fn main() -> Result<(), JsValue> {
 
     let distance_slider_div = SliderConfig::create_slider(&distance_slider_config, &universe);
 
-    let max_dimension = 16384.0;
+    let max_dimension = 15000.0;
     let max_scale_value = f64::floor(max_dimension / f64::max(height as f64, width as f64));
 
     let scale_slider_id = "scale-slider";
