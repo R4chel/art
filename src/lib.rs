@@ -23,6 +23,8 @@ fn draw_circle(
     context: &web_sys::CanvasRenderingContext2d,
     circle: &Circle,
     stroke_color: StrokeColor,
+    // THIS IS THE WRONG PLACE for scale!
+    scale: f64,
 ) {
     let color = JsValue::from_str(&circle.color());
     context.set_fill_style(&color);
@@ -36,9 +38,9 @@ fn draw_circle(
 
     context
         .arc(
-            circle.position.x,
-            circle.position.y,
-            circle.radius,
+            circle.position.x * scale,
+            circle.position.y * scale,
+            circle.radius * scale,
             0.0,
             f64::consts::PI * 2.0,
         )
@@ -53,18 +55,38 @@ pub fn render(universe: &Universe, canvas: &web_sys::HtmlCanvasElement) {
 
     for circle in universe.circles.iter() {
         if universe.config.bug_checkbox {
-            draw_circle(&context, &circle, StrokeColor::BLACK);
+            draw_circle(
+                &context,
+                &circle,
+                StrokeColor::BLACK,
+                universe.circle_config.scale,
+            );
         } else {
         };
-        draw_circle(&context, &circle, StrokeColor::FILLCOLOR);
+        draw_circle(
+            &context,
+            &circle,
+            StrokeColor::FILLCOLOR,
+            universe.circle_config.scale,
+        );
     }
 
     for apple in universe.apples.iter() {
         if universe.config.bug_checkbox {
-            draw_circle(&context, &apple.circle, StrokeColor::BLACK);
+            draw_circle(
+                &context,
+                &apple.circle,
+                StrokeColor::BLACK,
+                universe.circle_config.scale,
+            );
         } else {
         };
-        draw_circle(&context, &apple.circle, StrokeColor::FILLCOLOR);
+        draw_circle(
+            &context,
+            &apple.circle,
+            StrokeColor::FILLCOLOR,
+            universe.circle_config.scale,
+        );
     }
 }
 
@@ -75,7 +97,12 @@ pub fn highlight(
 ) {
     let context = context(&canvas);
     for circle in universe.circles.iter() {
-        draw_circle(&context, &circle, stroke_color);
+        draw_circle(
+            &context,
+            &circle,
+            stroke_color,
+            universe.circle_config.scale,
+        );
     }
 }
 
@@ -92,6 +119,7 @@ fn document() -> web_sys::Document {
 fn body() -> web_sys::HtmlElement {
     document().body().unwrap()
 }
+
 fn get_canvas_by_id(id: &str) -> web_sys::HtmlCanvasElement {
     document()
         .get_element_by_id(id)
@@ -423,17 +451,19 @@ fn indicate_next_step(no_circles: bool) {
     }
 }
 
+fn update_canvas_size(height: f64, width: f64) {
+    for canvas in all_canvases() {
+        canvas.set_height(height as u32);
+        canvas.set_width(width as u32);
+    }
+}
+
 // Called when the wasm module is instantiated
 #[wasm_bindgen(start)]
 pub fn main() -> Result<(), JsValue> {
     let width = body().client_width();
     let height = body().client_height();
-
-    for canvas in all_canvases() {
-        canvas.set_height(height as u32);
-        canvas.set_width(width as u32);
-    }
-
+    update_canvas_size(height.into(), width.into());
     let universe = Arc::new(Mutex::new(Universe {
         config: Config {
             status: Status::RUNNING,
@@ -441,12 +471,15 @@ pub fn main() -> Result<(), JsValue> {
             bug_checkbox: false,
             radius: 10.,
             apple_steps: 1000,
+            initial_height: height as f64,
+            initial_width: width as f64,
         },
         circle_config: CircleConfig {
             height: height as f64,
             width: width as f64,
             max_position_delta: 6.3,
             max_color_delta: 5,
+            scale: 1.,
         },
         circles: vec![],
         apples: vec![],
@@ -460,12 +493,37 @@ pub fn main() -> Result<(), JsValue> {
         left_label: Some(String::from("↔")),
         min: 0.0,
         max: 100.0,
-        step: 0.1,
+        step: 1.0,
         of_universe: (move |universe| universe.circle_config.max_position_delta),
         on_update: (move |universe, value| universe.circle_config.max_position_delta = value),
     };
 
     let distance_slider_div = SliderConfig::create_slider(&distance_slider_config, &universe);
+
+    let max_dimension = 16384.0;
+    let max_scale_value = f64::floor(max_dimension / f64::max(height as f64, width as f64));
+
+    let scale_slider_id = "scale-slider";
+    let scale_slider_config = SliderConfig {
+        id: String::from(scale_slider_id),
+        title: String::from("Movement Speed"),
+
+        left_label: Some(String::from("⚖️ ")),
+        min: 0.1,
+        max: max_scale_value,
+        step: 0.1,
+        of_universe: (move |universe| universe.circle_config.scale),
+        on_update: (move |universe, value| {
+            universe.circle_config.scale = value;
+
+            update_canvas_size(
+                universe.config.initial_height * value,
+                universe.config.initial_width * value,
+            )
+        }),
+    };
+
+    let scale_slider_div = SliderConfig::create_slider(&scale_slider_config, &universe);
 
     let color_slider_id = "color-slider";
     let color_slider_config = SliderConfig {
@@ -616,11 +674,11 @@ pub fn main() -> Result<(), JsValue> {
     body().append_child(&save_button)?;
     body().append_child(&trash_button)?;
     body().append_child(&new_circle_div)?;
+    body().append_child(&new_apple_div)?;
     body().append_child(&bug_checkbox)?;
     body().append_child(&distance_slider_div)?;
     body().append_child(&color_slider_div)?;
-
-    body().append_child(&new_apple_div)?;
+    body().append_child(&scale_slider_div)?;
 
     universe.lock().unwrap().add_circle();
     universe.lock().unwrap().add_circle();

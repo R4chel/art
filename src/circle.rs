@@ -226,6 +226,7 @@ pub struct CircleConfig {
     pub height: f64,
     pub max_position_delta: f64,
     pub max_color_delta: u8,
+    pub scale: f64,
     // pub radius: f64,
 }
 
@@ -236,6 +237,8 @@ pub struct Config {
     pub radius: f64,
     pub apple_steps: u32,
     pub bug_checkbox: bool,
+    pub initial_height: f64,
+    pub initial_width: f64,
 }
 
 #[derive(Clone, Copy)]
@@ -296,3 +299,44 @@ impl Speed {
         self.next().display()
     }
 }
+
+// #[derive(Copy, Clone)]
+// pub enum SizeMode {
+//     NORMAL,
+//     GIANT,
+// }
+
+// impl SizeMode {
+//     pub fn next(self) -> SizeMode {
+//         match self {
+//             SizeMode::GIANT => SizeMode::NORMAL,
+//             SizeMode::NORMAL => SizeMode::GIANT,
+//         }
+//     }
+
+//     fn toggle(&mut self, circle_config: &mut CircleConfig, normal_width: f64, normal_height: f64) {
+//         *self = self.next();
+//         match self {
+//             SizeMode::GIANT => {
+//                 circle_config.width = 15000.0;
+//                 circle_config.height = 15000.0;
+//             }
+
+//             SizeMode::NORMAL => {
+//                 circle_config.width = normal_width;
+//                 circle_config.height = normal_height;
+//             }
+//         }
+//     }
+
+//     fn display(self) -> String {
+//         String::from(match self {
+//             SizeMode::GIANT => "🐘",
+//             SizeMode::NORMAL => "🐁",
+//         })
+//     }
+
+//     pub fn to_button_display(self) -> String {
+//         self.next().display()
+//     }
+// }
