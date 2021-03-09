@@ -7,7 +7,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
 mod circle;
-use circle::{Circle, CircleConfig, Config, Speed, Status, Universe};
+use circle::{Circle, CircleConfig, ColorMode, Config, Speed, Status, Universe};
 
 const ADD_BUTTON_ID: &str = "add-button";
 const APPLE_BUTTON_ID: &str = "apple-button";
@@ -447,6 +447,7 @@ pub fn main() -> Result<(), JsValue> {
             apple_steps: 1000,
             initial_height: height as f64,
             initial_width: width as f64,
+            color_mode: ColorMode::RGB,
         },
         circle_config: CircleConfig {
             height: height as f64,
