@@ -152,8 +152,8 @@ impl HSL {
     pub fn new() -> Self {
         HSL {
             hue: Hue::new(),
-            saturation: random(),
-            lightness: random(),
+            saturation: random_in_range(0.5, 1.0),
+            lightness: random_in_range(0.25, 0.75),
             opacity: Opacity::rand(),
         }
     }
@@ -161,9 +161,9 @@ impl HSL {
     pub fn update(&mut self, config: &CircleConfig) {
         self.hue.update(&config);
         self.opacity.update();
-        let delta = config.max_color_delta as f64 / 360.;
-        self.saturation = saturating_random_in_range(self.saturation, delta, 0.0, 1.0);
-        self.lightness = saturating_random_in_range(self.lightness, delta, 0.0, 1.0);
+        let delta = config.max_color_delta as f64 / 360. * 1.5;
+        self.saturation = saturating_random_in_range(self.saturation, delta, 0.1, 1.0);
+        self.lightness = saturating_random_in_range(self.lightness, delta, 0.1, 0.9);
     }
 
     pub fn to_hsl(&self) -> String {
