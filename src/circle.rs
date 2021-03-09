@@ -343,6 +343,14 @@ impl Universe {
                 as u32,
         )
     }
+
+    pub fn toggle_size_mode(&mut self) {
+        self.config.size_mode.toggle(
+            &mut self.circle_config,
+            self.config.initial_width,
+            self.config.initial_height,
+        );
+    }
 }
 
 #[derive(Clone)]
@@ -380,6 +388,7 @@ pub struct Config {
     pub color_mode: ColorMode,
     pub initial_height: f64,
     pub initial_width: f64,
+    pub size_mode: SizeMode,
 }
 
 #[derive(Clone, Copy)]
@@ -467,5 +476,55 @@ impl ColorMode {
 
     pub fn to_button_display(self) -> String {
         self.next().display()
+    }
+}
+
+#[derive(Copy, Clone)]
+pub enum SizeMode {
+    NORMAL,
+    GIANT,
+}
+impl SizeMode {
+    pub fn next(self) -> SizeMode {
+        match self {
+            SizeMode::GIANT => SizeMode::NORMAL,
+            SizeMode::NORMAL => SizeMode::GIANT,
+        }
+    }
+
+    fn toggle(&mut self, circle_config: &mut CircleConfig, normal_width: f64, normal_height: f64) {
+        *self = self.next();
+        let scale = self.scale();
+        circle_config.scale = scale;
+        match self {
+            SizeMode::GIANT => {
+                let unscaled_size = 15000.0 / scale;
+                circle_config.width = unscaled_size;
+                circle_config.height = unscaled_size;
+            }
+
+            SizeMode::NORMAL => {
+                circle_config.width = normal_width;
+                circle_config.height = normal_height;
+            }
+        }
+    }
+
+    fn display(self) -> String {
+        String::from(match self {
+            SizeMode::GIANT => "🐘",
+            SizeMode::NORMAL => "🐁",
+        })
+    }
+
+    pub fn to_button_display(self) -> String {
+        self.next().display()
+    }
+
+    pub fn scale(&self) -> f64 {
+        match self {
+            SizeMode::NORMAL => 1.0,
+            SizeMode::GIANT => 20.0,
+        }
     }
 }

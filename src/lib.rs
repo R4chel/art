@@ -7,7 +7,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
 mod circle;
-use circle::{Circle, CircleConfig, ColorMode, Config, Speed, Status, Universe};
+use circle::{Circle, CircleConfig, ColorMode, Config, SizeMode, Speed, Status, Universe};
 
 const ADD_BUTTON_ID: &str = "add-button";
 const APPLE_BUTTON_ID: &str = "apple-button";
@@ -54,40 +54,21 @@ fn draw_circle(
 pub fn render(universe: &Universe, canvas: &web_sys::HtmlCanvasElement) {
     let context = context(&canvas);
 
+    let scale = universe.circle_config.scale;
     for circle in universe.circles.iter() {
         if universe.config.bug_checkbox {
-            draw_circle(
-                &context,
-                &circle,
-                StrokeColor::BLACK,
-                universe.circle_config.scale,
-            );
+            draw_circle(&context, &circle, StrokeColor::BLACK, scale);
         } else {
         };
-        draw_circle(
-            &context,
-            &circle,
-            StrokeColor::FILLCOLOR,
-            universe.circle_config.scale,
-        );
+        draw_circle(&context, &circle, StrokeColor::FILLCOLOR, scale);
     }
 
     for apple in universe.apples.iter() {
         if universe.config.bug_checkbox {
-            draw_circle(
-                &context,
-                &apple.circle,
-                StrokeColor::BLACK,
-                universe.circle_config.scale,
-            );
+            draw_circle(&context, &apple.circle, StrokeColor::BLACK, scale);
         } else {
         };
-        draw_circle(
-            &context,
-            &apple.circle,
-            StrokeColor::FILLCOLOR,
-            universe.circle_config.scale,
-        );
+        draw_circle(&context, &apple.circle, StrokeColor::FILLCOLOR, scale);
     }
 }
 
@@ -97,13 +78,9 @@ pub fn highlight(
     stroke_color: StrokeColor,
 ) {
     let context = context(&canvas);
+    let scale = universe.circle_config.scale;
     for circle in universe.circles.iter() {
-        draw_circle(
-            &context,
-            &circle,
-            stroke_color,
-            universe.circle_config.scale,
-        );
+        draw_circle(&context, &circle, stroke_color, scale);
     }
 }
 
@@ -475,13 +452,14 @@ pub fn main() -> Result<(), JsValue> {
             initial_height: height as f64,
             initial_width: width as f64,
             color_mode: ColorMode::HSL,
+            size_mode: SizeMode::NORMAL,
         },
         circle_config: CircleConfig {
             height: height as f64,
             width: width as f64,
             max_position_delta: 6.3,
             max_color_delta: 5,
-            scale: 1.,
+            scale: 1.0, // Should be determined by size mode or something
         },
         circles: vec![],
         apples: vec![],
@@ -505,27 +483,22 @@ pub fn main() -> Result<(), JsValue> {
     let max_dimension = 15000.0;
     let max_scale_value = f64::floor(max_dimension / f64::max(height as f64, width as f64));
 
-    let scale_slider_id = "scale-slider";
-    let scale_slider_config = SliderConfig {
-        id: String::from(scale_slider_id),
-        title: String::from("Movement Speed"),
+    let size_mode_button_id = "size-mode-button";
+    let size_mode_button_config = ButtonConfig {
+        id: String::from(size_mode_button_id),
 
-        left_label: Some(String::from("⚖️ ")),
-        min: 0.1,
-        max: max_scale_value,
-        step: 0.1,
-        of_universe: (move |universe| universe.circle_config.scale),
-        on_update: (move |universe, value| {
-            universe.circle_config.scale = value;
-
+        text: ButtonText::DYNAMIC(move |universe| universe.config.size_mode.to_button_display()),
+        on_click: (move |universe| {
+            universe.toggle_size_mode();
+            let scale = universe.circle_config.scale;
             update_canvas_size(
-                universe.config.initial_height * value,
-                universe.config.initial_width * value,
+                universe.circle_config.height * scale,
+                universe.circle_config.width * scale,
             )
         }),
     };
 
-    let scale_slider_div = SliderConfig::create_slider(&scale_slider_config, &universe);
+    let size_mode_button = ButtonConfig::new_button(size_mode_button_config, &universe);
 
     let color_slider_id = "color-slider";
     let color_slider_config = SliderConfig {
@@ -690,7 +663,7 @@ pub fn main() -> Result<(), JsValue> {
     body().append_child(&bug_checkbox)?;
     body().append_child(&distance_slider_div)?;
     body().append_child(&color_slider_div)?;
-    body().append_child(&scale_slider_div)?;
+    body().append_child(&size_mode_button)?;
     // body().append_child(&color_mode_button)?;
 
     universe.lock().unwrap().add_circle();
