@@ -447,7 +447,8 @@ pub fn main() -> Result<(), JsValue> {
             apple_steps: 1000,
             initial_height: height as f64,
             initial_width: width as f64,
-            color_mode: ColorMode::HSL,
+            color_mode: ColorMode::RGB,
+            // color_mode: ColorMode::HSL,
             size_mode: SizeMode::NORMAL,
         },
         circle_config: CircleConfig {
@@ -652,7 +653,7 @@ pub fn main() -> Result<(), JsValue> {
     body().append_child(&bug_checkbox)?;
     body().append_child(&distance_slider_div)?;
     body().append_child(&color_slider_div)?;
-    body().append_child(&size_mode_button)?;
+    // body().append_child(&size_mode_button)?;
     // body().append_child(&color_mode_button)?;
 
     universe.lock().unwrap().add_circle();
