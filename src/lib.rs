@@ -447,8 +447,7 @@ pub fn main() -> Result<(), JsValue> {
             apple_steps: 1000,
             initial_height: height as f64,
             initial_width: width as f64,
-            color_mode: ColorMode::RGB,
-            // color_mode: ColorMode::HSL,
+            color_mode: ColorMode::HSL,
             size_mode: SizeMode::NORMAL,
         },
         circle_config: CircleConfig {
