@@ -7,7 +7,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
 mod circle;
-use circle::{Circle, CircleConfig, ColorMode, Config, SizeMode, Speed, Status, Universe};
+use circle::{Circle, CircleConfig, Config, Speed, Status, Universe};
 
 const ADD_BUTTON_ID: &str = "add-button";
 const APPLE_BUTTON_ID: &str = "apple-button";
@@ -16,7 +16,6 @@ const APPLE_BUTTON_ID: &str = "apple-button";
 pub enum StrokeColor {
     BLACK,
     FILLCOLOR,
-    DARKER,
 }
 
 fn draw_circle(
@@ -31,7 +30,6 @@ fn draw_circle(
     let stroke_style = match stroke_color {
         StrokeColor::BLACK => JsValue::from_str("rgb(0,0,0)"),
         StrokeColor::FILLCOLOR => color,
-        StrokeColor::DARKER => JsValue::from_str(&circle.color.to_slightly_darker_color()),
     };
     context.set_stroke_style(&stroke_style);
 
@@ -435,8 +433,10 @@ fn update_canvas_size(height: f64, width: f64) {
 // Called when the wasm module is instantiated
 #[wasm_bindgen(start)]
 pub fn main() -> Result<(), JsValue> {
-    let width = body().client_width();
-    let height = body().client_height();
+    let width = 12000.0;
+    let height = 12000.0;
+    // let width = body().client_width();
+    // let height = body().client_height();
     update_canvas_size(height.into(), width.into());
     let universe = Arc::new(Mutex::new(Universe {
         config: Config {
@@ -447,8 +447,6 @@ pub fn main() -> Result<(), JsValue> {
             apple_steps: 1000,
             initial_height: height as f64,
             initial_width: width as f64,
-            color_mode: ColorMode::HSL,
-            size_mode: SizeMode::NORMAL,
         },
         circle_config: CircleConfig {
             height: height as f64,
@@ -467,6 +465,7 @@ pub fn main() -> Result<(), JsValue> {
 
         left_label: Some(String::from("↔")),
         min: 0.0,
+
         max: 100.0,
         step: 1.0,
         of_universe: (move |universe| universe.circle_config.max_position_delta),
@@ -474,19 +473,6 @@ pub fn main() -> Result<(), JsValue> {
     };
 
     let distance_slider_div = SliderConfig::create_slider(&distance_slider_config, &universe);
-
-    let size_mode_button_id = "size-mode-button";
-    let size_mode_button_config = ButtonConfig {
-        id: String::from(size_mode_button_id),
-
-        text: ButtonText::DYNAMIC(move |universe| universe.config.size_mode.to_button_display()),
-        on_click: (move |universe| {
-            universe.toggle_size_mode();
-            update_canvas_size(universe.circle_config.height, universe.circle_config.width)
-        }),
-    };
-
-    let size_mode_button = ButtonConfig::new_button(size_mode_button_config, &universe);
 
     let color_slider_id = "color-slider";
     let color_slider_config = SliderConfig {
@@ -588,17 +574,6 @@ pub fn main() -> Result<(), JsValue> {
     };
     let speed_button = speed_button_config.new_button(&universe);
 
-    let color_mode_button_id = "color-mode-button";
-    let color_mode_button_config = ButtonConfig {
-        id: String::from(color_mode_button_id),
-        text: ButtonText::DYNAMIC(move |universe| universe.config.color_mode.to_button_display()),
-        on_click: (move |universe| {
-            universe.config.color_mode.toggle();
-        }),
-    };
-    // USE OR DELETE
-    let _color_mode_button = color_mode_button_config.new_button(&universe);
-
     let trash_button_config = ButtonConfig {
         id: String::from("trash-button"),
         text: ButtonText::STATIC(String::from("🗑️")),
@@ -652,8 +627,6 @@ pub fn main() -> Result<(), JsValue> {
     body().append_child(&bug_checkbox)?;
     body().append_child(&distance_slider_div)?;
     body().append_child(&color_slider_div)?;
-    // body().append_child(&size_mode_button)?;
-    // body().append_child(&color_mode_button)?;
 
     universe.lock().unwrap().add_circle();
     universe.lock().unwrap().add_circle();
@@ -665,7 +638,6 @@ pub fn main() -> Result<(), JsValue> {
     *main_loop_copy.borrow_mut() = Some(Closure::wrap(Box::new(move || {
         let steps = universe.lock().unwrap().steps();
 
-        let overlay_canvas = overlay_canvas();
         let default_canvas = default_canvas();
 
         let mut universe = universe.lock().unwrap();
@@ -674,17 +646,7 @@ pub fn main() -> Result<(), JsValue> {
             render(&universe, &default_canvas);
         }
 
-        clear_canvas(&overlay_canvas);
-        match &universe.config.status {
-            Status::RUNNING => {
-                highlight(&universe, &overlay_canvas, StrokeColor::DARKER);
-            }
-            Status::PAUSED => {}
-        }
-
         request_animation_frame(main_loop.borrow().as_ref().unwrap());
-
-        indicate_next_step(universe.is_empty());
     }) as Box<dyn FnMut()>));
 
     request_animation_frame(main_loop_copy.borrow().as_ref().unwrap());
