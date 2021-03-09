@@ -11,11 +11,31 @@ use circle::{Circle, CircleConfig, ColorMode, Config, Speed, Status, Universe};
 
 const ADD_BUTTON_ID: &str = "add-button";
 const APPLE_BUTTON_ID: &str = "apple-button";
+const SVG_ID: &str = "svg";
 
 #[derive(Copy, Clone)]
 pub enum StrokeColor {
     BLACK,
     FILLCOLOR,
+}
+
+fn circle_to_svg(circle: &Circle) -> web_sys::SvgCircleElement {
+    let svg_circle = document()
+        .create_element("circle")
+        .unwrap()
+        .dyn_into::<web_sys::SvgCircleElement>()
+        .unwrap();
+    svg_circle
+        .set_attribute("r", &circle.radius.to_string())
+        .unwrap();
+    svg_circle
+        .set_attribute("cx", &circle.position.x.to_string())
+        .unwrap();
+    svg_circle
+        .set_attribute("cy", &circle.position.y.to_string())
+        .unwrap();
+    svg_circle.set_attribute("fill", &circle.color()).unwrap();
+    svg_circle
 }
 
 fn draw_circle(
@@ -45,6 +65,16 @@ fn draw_circle(
 
     context.fill();
     context.stroke();
+}
+
+pub fn render_svg(universe: &Universe, svg: &web_sys::SvgElement) {
+    for circle in universe.circles.iter() {
+        svg.append_child(&circle_to_svg(&circle)).unwrap();
+    }
+
+    for apple in universe.apples.iter() {
+        svg.append_child(&circle_to_svg(&apple.circle)).unwrap();
+    }
 }
 
 pub fn render(universe: &Universe, canvas: &web_sys::HtmlCanvasElement) {
@@ -433,10 +463,10 @@ fn update_canvas_size(height: f64, width: f64) {
 // Called when the wasm module is instantiated
 #[wasm_bindgen(start)]
 pub fn main() -> Result<(), JsValue> {
-    let width = 12000.0;
-    let height = 12000.0;
-    // let width = body().client_width();
-    // let height = body().client_height();
+    // let width = 12000.0;
+    // let height = 12000.0;
+    let width = body().client_width();
+    let height = body().client_height();
     update_canvas_size(height.into(), width.into());
     let universe = Arc::new(Mutex::new(Universe {
         config: Config {
@@ -447,7 +477,7 @@ pub fn main() -> Result<(), JsValue> {
             apple_steps: 1000,
             initial_height: height as f64,
             initial_width: width as f64,
-            color_mode: ColorMode::RGB,
+            color_mode: ColorMode::HSL,
         },
         circle_config: CircleConfig {
             height: height as f64,
@@ -636,15 +666,33 @@ pub fn main() -> Result<(), JsValue> {
     let main_loop_copy = main_loop.clone();
 
     clear_board();
+    let svg = document()
+        .create_element_ns(Some("http://www.w3.org/2000/svg"), "svg")
+        .unwrap()
+        .dyn_into::<web_sys::SvgElement>()
+        .map_err(|_| ())
+        .unwrap();
+
+    svg.set_id(&SVG_ID);
+    svg.set_attribute("width", &width.to_string())?;
+    svg.set_attribute("height", &height.to_string())?;
+    svg.set_attribute("viewBox", &format!("0 0 {} {}", height, width))?;
+
+    body().append_child(&svg)?;
+
     *main_loop_copy.borrow_mut() = Some(Closure::wrap(Box::new(move || {
         let steps = universe.lock().unwrap().steps();
 
-        let default_canvas = default_canvas();
+        let svg = document()
+            .get_element_by_id(SVG_ID)
+            .unwrap()
+            .dyn_into::<web_sys::SvgElement>()
+            .unwrap();
 
         let mut universe = universe.lock().unwrap();
         for _ in 0..steps {
             universe.tick();
-            render(&universe, &default_canvas);
+            render_svg(&universe, &svg);
         }
 
         request_animation_frame(main_loop.borrow().as_ref().unwrap());

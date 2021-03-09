@@ -32,5 +32,6 @@ features = [
   'HtmlInputElement',
   'HtmlLabelElement',
   'HtmlParagraphElement',
+  'SvgCircleElement',
   'Window',
 ]
