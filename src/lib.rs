@@ -21,10 +21,17 @@ pub enum StrokeColor {
 
 fn circle_to_svg(circle: &Circle) -> web_sys::SvgCircleElement {
     let svg_circle = document()
-        .create_element("circle")
+        .create_element_ns(Some("http://www.w3.org/2000/svg"), "circle")
         .unwrap()
         .dyn_into::<web_sys::SvgCircleElement>()
         .unwrap();
+    // element.set_attribute("cx", &position.x.to_string())?;
+    // element.set_attribute("cy", &position.y.to_string())?;
+    // element.set_attribute("r", &radius.to_string())?;
+    // element.set_attribute("fill", fill)?;
+
+    // .dyn_into::<web_sys::SvgCircleElement>()
+    // .unwrap();
     svg_circle
         .set_attribute("r", &circle.radius.to_string())
         .unwrap();
@@ -68,12 +75,17 @@ fn draw_circle(
 }
 
 pub fn render_svg(universe: &Universe, svg: &web_sys::SvgElement) {
-    for circle in universe.circles.iter() {
-        svg.append_child(&circle_to_svg(&circle)).unwrap();
-    }
+    match universe.config.status {
+        Status::PAUSED => {}
+        Status::RUNNING => {
+            for circle in universe.circles.iter() {
+                svg.append_child(&circle_to_svg(&circle)).unwrap();
+            }
 
-    for apple in universe.apples.iter() {
-        svg.append_child(&circle_to_svg(&apple.circle)).unwrap();
+            for apple in universe.apples.iter() {
+                svg.append_child(&circle_to_svg(&apple.circle)).unwrap();
+            }
+        }
     }
 }
 
@@ -470,7 +482,7 @@ pub fn main() -> Result<(), JsValue> {
     update_canvas_size(height.into(), width.into());
     let universe = Arc::new(Mutex::new(Universe {
         config: Config {
-            status: Status::RUNNING,
+            status: Status::PAUSED,
             speed: Speed::NORMAL,
             bug_checkbox: false,
             radius: 10.,
@@ -659,7 +671,6 @@ pub fn main() -> Result<(), JsValue> {
     body().append_child(&distance_slider_div)?;
     body().append_child(&color_slider_div)?;
 
-    universe.lock().unwrap().add_circle();
     universe.lock().unwrap().add_circle();
 
     let main_loop = Rc::new(RefCell::new(None));
