@@ -162,7 +162,7 @@ impl HSL {
         self.hue.update(&config);
         self.opacity.update();
         let delta = config.max_color_delta as f64 / 360. * 1.5;
-        self.saturation = saturating_random_in_range(self.saturation, delta, 0.1, 1.0);
+        self.saturation = saturating_random_in_range(self.saturation, delta, 0.4, 1.0);
         self.lightness = saturating_random_in_range(self.lightness, delta, 0.1, 0.9);
     }
 
@@ -338,7 +338,7 @@ impl Universe {
 
     pub fn steps(&self) -> u32 {
         u32::max(
-            self.remaining_apple_steps(),
+            u32::min(5000, self.remaining_apple_steps()),
             f64::ceil(self.config.speed.steps() as f64 / (f64::max(1.0, self.circles.len() as f64)))
                 as u32,
         )
