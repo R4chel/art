@@ -23,8 +23,6 @@ fn draw_circle(
     context: &web_sys::CanvasRenderingContext2d,
     circle: &Circle,
     stroke_color: StrokeColor,
-    // THIS IS THE WRONG PLACE for scale!
-    scale: f64,
 ) {
     let color = JsValue::from_str(&circle.color());
 
@@ -39,9 +37,9 @@ fn draw_circle(
 
     context
         .arc(
-            circle.position.x * scale,
-            circle.position.y * scale,
-            circle.radius * scale,
+            circle.position.x,
+            circle.position.y,
+            circle.radius,
             0.0,
             f64::consts::PI * 2.0,
         )
@@ -54,21 +52,20 @@ fn draw_circle(
 pub fn render(universe: &Universe, canvas: &web_sys::HtmlCanvasElement) {
     let context = context(&canvas);
 
-    let scale = universe.circle_config.scale;
     for circle in universe.circles.iter() {
         if universe.config.bug_checkbox {
-            draw_circle(&context, &circle, StrokeColor::BLACK, scale);
+            draw_circle(&context, &circle, StrokeColor::BLACK);
         } else {
         };
-        draw_circle(&context, &circle, StrokeColor::FILLCOLOR, scale);
+        draw_circle(&context, &circle, StrokeColor::FILLCOLOR);
     }
 
     for apple in universe.apples.iter() {
         if universe.config.bug_checkbox {
-            draw_circle(&context, &apple.circle, StrokeColor::BLACK, scale);
+            draw_circle(&context, &apple.circle, StrokeColor::BLACK);
         } else {
         };
-        draw_circle(&context, &apple.circle, StrokeColor::FILLCOLOR, scale);
+        draw_circle(&context, &apple.circle, StrokeColor::FILLCOLOR);
     }
 }
 
@@ -78,9 +75,8 @@ pub fn highlight(
     stroke_color: StrokeColor,
 ) {
     let context = context(&canvas);
-    let scale = universe.circle_config.scale;
     for circle in universe.circles.iter() {
-        draw_circle(&context, &circle, stroke_color, scale);
+        draw_circle(&context, &circle, stroke_color);
     }
 }
 
@@ -459,7 +455,6 @@ pub fn main() -> Result<(), JsValue> {
             width: width as f64,
             max_position_delta: 6.3,
             max_color_delta: 5,
-            scale: 1.0, // Should be determined by size mode or something
         },
         circles: vec![],
         apples: vec![],
@@ -480,9 +475,6 @@ pub fn main() -> Result<(), JsValue> {
 
     let distance_slider_div = SliderConfig::create_slider(&distance_slider_config, &universe);
 
-    let max_dimension = 15000.0;
-    let max_scale_value = f64::floor(max_dimension / f64::max(height as f64, width as f64));
-
     let size_mode_button_id = "size-mode-button";
     let size_mode_button_config = ButtonConfig {
         id: String::from(size_mode_button_id),
@@ -490,11 +482,7 @@ pub fn main() -> Result<(), JsValue> {
         text: ButtonText::DYNAMIC(move |universe| universe.config.size_mode.to_button_display()),
         on_click: (move |universe| {
             universe.toggle_size_mode();
-            let scale = universe.circle_config.scale;
-            update_canvas_size(
-                universe.circle_config.height * scale,
-                universe.circle_config.width * scale,
-            )
+            update_canvas_size(universe.circle_config.height, universe.circle_config.width)
         }),
     };
 
@@ -608,7 +596,8 @@ pub fn main() -> Result<(), JsValue> {
             universe.config.color_mode.toggle();
         }),
     };
-    let color_mode_button = color_mode_button_config.new_button(&universe);
+    // USE OR DELETE
+    let _color_mode_button = color_mode_button_config.new_button(&universe);
 
     let trash_button_config = ButtonConfig {
         id: String::from("trash-button"),

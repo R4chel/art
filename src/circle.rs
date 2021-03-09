@@ -374,7 +374,6 @@ pub struct CircleConfig {
     pub height: f64,
     pub max_position_delta: f64,
     pub max_color_delta: u8,
-    pub scale: f64,
     // pub radius: f64,
 }
 
@@ -494,13 +493,11 @@ impl SizeMode {
 
     fn toggle(&mut self, circle_config: &mut CircleConfig, normal_width: f64, normal_height: f64) {
         *self = self.next();
-        let scale = self.scale();
-        circle_config.scale = scale;
         match self {
             SizeMode::GIANT => {
-                let unscaled_size = 15000.0 / scale;
-                circle_config.width = unscaled_size;
-                circle_config.height = unscaled_size;
+                let size = 12000.0;
+                circle_config.width = size;
+                circle_config.height = size;
             }
 
             SizeMode::NORMAL => {
@@ -519,12 +516,5 @@ impl SizeMode {
 
     pub fn to_button_display(self) -> String {
         self.next().display()
-    }
-
-    pub fn scale(&self) -> f64 {
-        match self {
-            SizeMode::NORMAL => 1.0,
-            SizeMode::GIANT => 20.0,
-        }
     }
 }
