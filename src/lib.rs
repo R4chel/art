@@ -25,13 +25,6 @@ fn circle_to_svg(circle: &Circle) -> web_sys::SvgCircleElement {
         .unwrap()
         .dyn_into::<web_sys::SvgCircleElement>()
         .unwrap();
-    // element.set_attribute("cx", &position.x.to_string())?;
-    // element.set_attribute("cy", &position.y.to_string())?;
-    // element.set_attribute("r", &radius.to_string())?;
-    // element.set_attribute("fill", fill)?;
-
-    // .dyn_into::<web_sys::SvgCircleElement>()
-    // .unwrap();
     svg_circle
         .set_attribute("r", &circle.radius.to_string())
         .unwrap();
@@ -72,6 +65,14 @@ fn draw_circle(
 
     context.fill();
     context.stroke();
+}
+
+fn svg() -> web_sys::SvgElement {
+    document()
+        .get_element_by_id(SVG_ID)
+        .unwrap()
+        .dyn_into::<web_sys::SvgElement>()
+        .unwrap()
 }
 
 pub fn render_svg(universe: &Universe, svg: &web_sys::SvgElement) {
@@ -183,8 +184,17 @@ fn clear_canvas(canvas: &web_sys::HtmlCanvasElement) {
     context.clear_rect(0.0, 0.0, canvas.width() as f64, canvas.height() as f64);
 }
 
+fn clear_svg() {
+    let svg = svg();
+    let child_nodes = svg.child_nodes();
+
+    for i in 0..child_nodes.length() {
+        child_nodes.get(i).map(|node| svg.remove_child(&node));
+    }
+}
 fn clear_board() {
     web_sys::console::log(&js_sys::Array::from(&JsValue::from_str("CLEAR")));
+    clear_svg();
     for canvas in all_canvases() {
         clear_canvas(&canvas)
     }
@@ -671,12 +681,6 @@ pub fn main() -> Result<(), JsValue> {
     body().append_child(&distance_slider_div)?;
     body().append_child(&color_slider_div)?;
 
-    universe.lock().unwrap().add_circle();
-
-    let main_loop = Rc::new(RefCell::new(None));
-    let main_loop_copy = main_loop.clone();
-
-    clear_board();
     let svg = document()
         .create_element_ns(Some("http://www.w3.org/2000/svg"), "svg")
         .unwrap()
@@ -688,8 +692,14 @@ pub fn main() -> Result<(), JsValue> {
     svg.set_attribute("width", &width.to_string())?;
     svg.set_attribute("height", &height.to_string())?;
     svg.set_attribute("viewBox", &format!("0 0 {} {}", height, width))?;
-
     body().append_child(&svg)?;
+
+    universe.lock().unwrap().add_circle();
+
+    let main_loop = Rc::new(RefCell::new(None));
+    let main_loop_copy = main_loop.clone();
+
+    clear_board();
 
     *main_loop_copy.borrow_mut() = Some(Closure::wrap(Box::new(move || {
         let steps = universe.lock().unwrap().steps();

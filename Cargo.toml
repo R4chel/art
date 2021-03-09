@@ -28,10 +28,13 @@ features = [
   'HtmlBrElement',
   'HtmlButtonElement',
   'HtmlCanvasElement',
+  'HtmlCollection',
   'HtmlDivElement',
   'HtmlInputElement',
   'HtmlLabelElement',
   'HtmlParagraphElement',
+  'Node',
+  'NodeList',
   'SvgCircleElement',
   'Window',
 ]
