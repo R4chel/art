@@ -7,7 +7,9 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
 mod circle;
-use circle::{Circle, CircleConfig, ColorMode, Config, Speed, Status, Universe};
+use circle::{
+    Circle, CircleConfig, ColorConfig, ColorMode, ColorParamConfig, Config, Speed, Status, Universe,
+};
 
 const ADD_BUTTON_ID: &str = "add-button";
 const APPLE_BUTTON_ID: &str = "apple-button";
@@ -499,10 +501,24 @@ pub fn main() -> Result<(), JsValue> {
             height: height as f64,
             width: width as f64,
             max_position_delta: 6.3,
-            max_color_delta: 2.,
-            // TRYING TO GET SOME YELLOW! THIS SHOULD BE CONFIGURABLE
-            color_min: 0.,
-            color_max: 360.,
+            color_config: ColorConfig {
+                hue_config: ColorParamConfig {
+                    max_delta: 2.,
+                    min_value: 0.,
+                    max_value: 360.,
+                },
+
+                saturation_config: ColorParamConfig {
+                    max_delta: 0.05,
+                    min_value: 0.5,
+                    max_value: 1.,
+                },
+                lightness_config: ColorParamConfig {
+                    max_delta: 0.05,
+                    min_value: 0.4,
+                    max_value: 0.6,
+                },
+            },
         },
         circles: vec![],
         apples: vec![],
@@ -546,8 +562,10 @@ pub fn main() -> Result<(), JsValue> {
         min: 0.0,
         max: 50.0,
         step: 0.1,
-        of_universe: (move |universe| universe.circle_config.max_color_delta),
-        on_update: (move |universe, value| universe.circle_config.max_color_delta = value),
+        of_universe: (move |universe| universe.circle_config.color_config.hue_config.max_delta),
+        on_update: (move |universe, value| {
+            universe.circle_config.color_config.hue_config.max_delta = value
+        }),
     };
 
     let color_slider_div = SliderConfig::create_slider(&color_slider_config, &universe);
