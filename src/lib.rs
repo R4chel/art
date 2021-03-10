@@ -11,7 +11,6 @@ use circle::{Circle, CircleConfig, ColorMode, Config, Speed, Status, Universe};
 
 const ADD_BUTTON_ID: &str = "add-button";
 const APPLE_BUTTON_ID: &str = "apple-button";
-const SVG_ID: &str = "svg";
 
 #[derive(Copy, Clone)]
 pub enum StrokeColor {
@@ -65,14 +64,6 @@ fn draw_circle(
 
     context.fill();
     context.stroke();
-}
-
-fn svg() -> web_sys::SvgElement {
-    document()
-        .get_element_by_id(SVG_ID)
-        .unwrap()
-        .dyn_into::<web_sys::SvgElement>()
-        .unwrap()
 }
 
 pub fn render_svg(universe: &Universe, svg: &web_sys::SvgElement) {
@@ -183,18 +174,15 @@ fn clear_canvas(canvas: &web_sys::HtmlCanvasElement) {
 
     context.clear_rect(0.0, 0.0, canvas.width() as f64, canvas.height() as f64);
 }
-
-fn clear_svg() {
-    let svg = svg();
-
+fn clear_svg(svg: &mut web_sys::SvgElement) {
     while let Some(child) = svg.first_child() {
         svg.remove_child(&child).unwrap();
     }
 }
 
-fn clear_board() {
+fn clear_board(svg: &mut web_sys::SvgElement) {
     web_sys::console::log(&js_sys::Array::from(&JsValue::from_str("CLEAR")));
-    clear_svg();
+    clear_svg(svg);
     for canvas in all_canvases() {
         clear_canvas(&canvas)
     }
@@ -381,11 +369,15 @@ enum ButtonText {
 struct ButtonConfig {
     id: String,
     text: ButtonText,
-    on_click: fn(&mut Universe) -> (),
+    on_click: fn(&mut Universe, &mut web_sys::SvgElement) -> (),
 }
 
 impl ButtonConfig {
-    pub fn new_button(self, universe: &Arc<Mutex<Universe>>) -> web_sys::HtmlButtonElement {
+    pub fn new_button(
+        self,
+        universe: &Arc<Mutex<Universe>>,
+        svg: &Arc<Mutex<web_sys::SvgElement>>,
+    ) -> web_sys::HtmlButtonElement {
         let button = document()
             .create_element("button")
             .unwrap()
@@ -400,12 +392,16 @@ impl ButtonConfig {
         button.set_inner_text(&inner_text);
 
         let universe_clone = Arc::clone(&universe);
+        let svg_clone = Arc::clone(&svg);
         let on_click_handler = Closure::wrap(Box::new(move || {
             web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
                 "You pushed a button!",
             )));
 
-            (self.on_click)(&mut universe_clone.lock().unwrap());
+            (self.on_click)(
+                &mut universe_clone.lock().unwrap(),
+                &mut svg_clone.lock().unwrap(),
+            );
 
             match self.text {
                 ButtonText::STATIC(_) => {}
@@ -511,6 +507,20 @@ pub fn main() -> Result<(), JsValue> {
         apples: vec![],
     }));
 
+    let svg = document()
+        .create_element_ns(Some("http://www.w3.org/2000/svg"), "svg")
+        .unwrap()
+        .dyn_into::<web_sys::SvgElement>()
+        .map_err(|_| ())
+        .unwrap();
+
+    svg.set_id("svg");
+    svg.set_attribute("width", &width.to_string())?;
+    svg.set_attribute("height", &height.to_string())?;
+    svg.set_attribute("viewBox", &format!("0 0 {} {}", width, height))?;
+
+    let svg = Arc::new(Mutex::new(svg));
+
     let distance_slider_id = "distance-slider";
     let distance_slider_config = SliderConfig {
         id: String::from(distance_slider_id),
@@ -556,7 +566,7 @@ pub fn main() -> Result<(), JsValue> {
     let add_button_config = ButtonConfig {
         id: String::from(ADD_BUTTON_ID),
         text: ButtonText::STATIC(String::from("+")),
-        on_click: (move |universe| {
+        on_click: (move |universe, _svg| {
             universe.add_circle();
 
             document()
@@ -565,7 +575,7 @@ pub fn main() -> Result<(), JsValue> {
                 .set_class_name("");
         }),
     };
-    let add_button = add_button_config.new_button(&universe);
+    let add_button = add_button_config.new_button(&universe, &svg);
 
     let new_circle_div = SliderConfig::create_slider(&radius_slider_config, &universe);
 
@@ -575,12 +585,12 @@ pub fn main() -> Result<(), JsValue> {
         id: String::from("freeze-button"),
         text: ButtonText::STATIC(String::from("🧊")),
 
-        on_click: (move |universe| {
+        on_click: (move |universe, _svg| {
             universe.circles.clear();
         }),
     };
 
-    let freeze_button = ButtonConfig::new_button(freeze_button_config, &universe);
+    let freeze_button = ButtonConfig::new_button(freeze_button_config, &universe, &svg);
 
     let apple_steps_slider_config = SliderConfig {
         id: String::from("apple-steps-slider"),
@@ -597,56 +607,68 @@ pub fn main() -> Result<(), JsValue> {
         id: String::from("apple-button"),
         text: ButtonText::STATIC(String::from("🍏")),
 
-        on_click: (move |universe| {
+        on_click: (move |universe, _svg| {
             universe.add_apple();
         }),
     };
 
     let new_apple_div = SliderConfig::create_slider(&apple_steps_slider_config, &universe);
 
-    let apple_button = ButtonConfig::new_button(apple_button_config, &universe);
+    let apple_button = ButtonConfig::new_button(apple_button_config, &universe, &svg);
     new_apple_div.append_child(&apple_button)?;
 
     let start_stop_button_id = "start-stop-button";
     let start_stop_button_config = ButtonConfig {
         id: String::from(start_stop_button_id),
         text: ButtonText::DYNAMIC(move |universe| universe.config.status.to_button_display()),
-        on_click: move |universe| {
+        on_click: move |universe, _svg| {
             universe.config.status.toggle();
         },
     };
-    let start_stop_button = start_stop_button_config.new_button(&universe);
+    let start_stop_button = start_stop_button_config.new_button(&universe, &svg);
 
     let speed_button_id = "speed-button";
     let speed_button_config = ButtonConfig {
         id: String::from(speed_button_id),
         text: ButtonText::DYNAMIC(move |universe| universe.config.speed.to_button_display()),
-        on_click: (move |universe| {
+        on_click: (move |universe, _svg| {
             universe.config.speed.toggle();
         }),
     };
-    let speed_button = speed_button_config.new_button(&universe);
+    let speed_button = speed_button_config.new_button(&universe, &svg);
 
     let trash_button_config = ButtonConfig {
         id: String::from("trash-button"),
         text: ButtonText::STATIC(String::from("🗑️")),
-        on_click: (move |universe| {
+        on_click: (move |universe, svg| {
             universe.circles.clear();
             universe.apples.clear();
-            clear_board();
+            clear_board(svg);
             document()
                 .get_element_by_id(ADD_BUTTON_ID)
                 .unwrap()
                 .set_class_name("highlight");
         }),
     };
-    let trash_button = trash_button_config.new_button(&universe);
+    let trash_button = trash_button_config.new_button(&universe, &svg);
 
     let save_button_config = ButtonConfig {
         id: String::from("save-button"),
         text: ButtonText::STATIC(String::from("💾")),
-        on_click: (move |_universe| {
-            let image = default_canvas().to_data_url().unwrap();
+        on_click: (move |_universe, svg| {
+            // let image = default_canvas().to_data_url().unwrap();
+
+            let xml_serializer = web_sys::XmlSerializer::new().unwrap();
+            let svg_buf = xml_serializer.serialize_to_string(&svg).unwrap();
+            let mut blob_type = web_sys::BlobPropertyBag::new();
+            blob_type.type_("image/svg+xml;charset=utf-8");
+
+            let blob = web_sys::Blob::new_with_str_sequence_and_options(
+                &JsValue::from_str(&svg_buf),
+                &blob_type,
+            )
+            .unwrap();
+            let url = web_sys::Url::create_object_url_with_blob(&blob).unwrap();
 
             let anchor = document()
                 .create_element("a")
@@ -654,12 +676,12 @@ pub fn main() -> Result<(), JsValue> {
                 .dyn_into::<web_sys::HtmlAnchorElement>()
                 .unwrap();
 
-            anchor.set_href(&image);
+            anchor.set_href(&url);
             anchor.set_download("art.png");
             anchor.click();
         }),
     };
-    let save_button = save_button_config.new_button(&universe);
+    let save_button = save_button_config.new_button(&universe, &svg);
 
     let bug_checkbox_config = CheckboxConfig {
         id: String::from("bug-checkbox"),
@@ -681,39 +703,23 @@ pub fn main() -> Result<(), JsValue> {
     body().append_child(&distance_slider_div)?;
     body().append_child(&color_slider_div)?;
 
-    let svg = document()
-        .create_element_ns(Some("http://www.w3.org/2000/svg"), "svg")
-        .unwrap()
-        .dyn_into::<web_sys::SvgElement>()
-        .map_err(|_| ())
-        .unwrap();
-
-    svg.set_id(&SVG_ID);
-    svg.set_attribute("width", &width.to_string())?;
-    svg.set_attribute("height", &height.to_string())?;
-    svg.set_attribute("viewBox", &format!("0 0 {} {}", width, height))?;
-    body().append_child(&svg)?;
+    body().append_child(&svg.lock().unwrap())?;
 
     universe.lock().unwrap().add_circle();
 
     let main_loop = Rc::new(RefCell::new(None));
     let main_loop_copy = main_loop.clone();
 
-    clear_board();
+    clear_board(&mut svg.lock().unwrap());
 
+    let svg_clone = svg.clone();
     *main_loop_copy.borrow_mut() = Some(Closure::wrap(Box::new(move || {
         let steps = universe.lock().unwrap().steps();
-
-        let svg = document()
-            .get_element_by_id(SVG_ID)
-            .unwrap()
-            .dyn_into::<web_sys::SvgElement>()
-            .unwrap();
 
         let mut universe = universe.lock().unwrap();
         for _ in 0..steps {
             universe.tick();
-            render_svg(&universe, &svg);
+            render_svg(&universe, &svg_clone.lock().unwrap());
         }
 
         request_animation_frame(main_loop.borrow().as_ref().unwrap());

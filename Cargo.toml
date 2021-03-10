@@ -20,6 +20,8 @@ features = ["wasm-bindgen"]
 version = "0.3.4"
 features = [
   'console',
+  'Blob',
+  'BlobPropertyBag',
   'CanvasRenderingContext2d',
   'Document',
   'Element',
@@ -36,5 +38,9 @@ features = [
   'Node',
   'NodeList',
   'SvgCircleElement',
+  'SvgElement',
+  'SvgaElement',
+  'Url',
+  'XmlSerializer',
   'Window',
 ]
