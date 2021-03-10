@@ -481,8 +481,6 @@ fn update_canvas_size(height: f64, width: f64) {
 // Called when the wasm module is instantiated
 #[wasm_bindgen(start)]
 pub fn main() -> Result<(), JsValue> {
-    // let width = 12000.0;
-    // let height = 12000.0;
     let width = body().client_width();
     let height = body().client_height();
     update_canvas_size(height.into(), width.into());
@@ -501,7 +499,10 @@ pub fn main() -> Result<(), JsValue> {
             height: height as f64,
             width: width as f64,
             max_position_delta: 6.3,
-            max_color_delta: 5,
+            max_color_delta: 2.,
+            // TRYING TO GET SOME YELLOW! THIS SHOULD BE CONFIGURABLE
+            color_min: 15.,
+            color_max: 70.,
         },
         circles: vec![],
         apples: vec![],
@@ -544,9 +545,9 @@ pub fn main() -> Result<(), JsValue> {
         left_label: Some(String::from("🌈")),
         min: 0.0,
         max: 50.0,
-        step: 1.0,
-        of_universe: (move |universe| universe.circle_config.max_color_delta as f64),
-        on_update: (move |universe, value| universe.circle_config.max_color_delta = value as u8),
+        step: 0.1,
+        of_universe: (move |universe| universe.circle_config.max_color_delta),
+        on_update: (move |universe, value| universe.circle_config.max_color_delta = value),
     };
 
     let color_slider_div = SliderConfig::create_slider(&color_slider_config, &universe);

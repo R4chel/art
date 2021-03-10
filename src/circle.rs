@@ -52,27 +52,6 @@ impl Position {
     }
 }
 
-#[derive(Clone, Debug)]
-struct ColorBit(u8);
-
-impl Display for ColorBit {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl ColorBit {
-    fn rand() -> Self {
-        ColorBit(f64::round(random() * 255 as f64) as u8)
-    }
-
-    fn update(&mut self, config: &CircleConfig) -> () {
-        let min = self.0.saturating_sub(config.max_color_delta);
-        let max = self.0.saturating_add(config.max_color_delta);
-        self.0 = f64::floor(random() * (max - min + 1) as f64) as u8 + min;
-    }
-}
-
 #[derive(Clone, Debug, Copy)]
 struct Opacity(f64);
 
@@ -92,66 +71,34 @@ impl Opacity {
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct RGBColor {
-    r: ColorBit,
-    g: ColorBit,
-    b: ColorBit,
-    a: Opacity,
-}
-
-impl RGBColor {
-    fn new() -> Self {
-        RGBColor {
-            r: ColorBit::rand(),
-            g: ColorBit::rand(),
-            b: ColorBit::rand(),
-            a: Opacity::rand(),
-        }
-    }
-
-    fn to_rgba(&self) -> String {
-        format!("rgb({}, {}, {}, {})", self.r, self.g, self.b, self.a)
-    }
-
-    fn update(&mut self, config: &CircleConfig) {
-        self.r.update(&config);
-        self.g.update(&config);
-        self.b.update(&config);
-        self.a.update();
-    }
-
-    pub fn to_slightly_darker_color(&self) -> String {
-        let mut hsl = HSL::from_rgb(&self);
-        hsl.lightness = f64::max(0.0, hsl.lightness - 0.1);
-        format!("hsl({}, {}, {})", hsl.hue.0, hsl.saturation, hsl.lightness)
-    }
-}
-
 #[derive(Debug, Clone, Copy)]
 pub struct Hue(f64);
 
 impl Hue {
-    pub fn new() -> Self {
-        Hue(random_in_range(0.0, 360.0))
+    pub fn new(config: &CircleConfig) -> Self {
+        Hue(random_in_range(config.color_min, config.color_max))
     }
     pub fn update(&mut self, config: &CircleConfig) {
         let max_color_delta = config.max_color_delta as f64;
-        self.0 = random_in_range(self.0 - max_color_delta, self.0 + max_color_delta) % 360.0
+
+        // This messes up the circleness that 0 = 360, hmmm
+        self.0 =
+            saturating_random_in_range(self.0, max_color_delta, config.color_min, config.color_max)
+        // self.0 = random_in_range(self.0 - max_color_delta, self.0 + max_color_delta) % 360.0
     }
 }
 #[derive(Debug, Clone, Copy)]
-pub struct HSL {
+pub struct Color {
     hue: Hue,
     saturation: f64,
     lightness: f64,
     opacity: Opacity,
 }
 
-impl HSL {
-    pub fn new() -> Self {
-        HSL {
-            hue: Hue::new(),
+impl Color {
+    pub fn new(config: &CircleConfig) -> Self {
+        Color {
+            hue: Hue::new(&config),
             saturation: random_in_range(0.5, 1.0),
             lightness: random_in_range(0.25, 0.75),
             opacity: Opacity::rand(),
@@ -174,9 +121,10 @@ impl HSL {
             self.lightness * 100.0
         )
     }
+
     pub fn to_hsla(&self) -> String {
         format!(
-            "hsl({:.3}, {:.4}%, {:.4}%, {:3})",
+            "hsl({:.3}, {:.3}%, {:.3}%, {:3})",
             self.hue.0,
             self.saturation * 100.,
             self.lightness * 100.0,
@@ -191,79 +139,11 @@ impl HSL {
         }
     }
 
-    fn from_rgb(rgb: &RGBColor) -> HSL {
-        let r = rgb.r.0 as f64 / 255.0;
-        let g = rgb.g.0 as f64 / 255.0;
-        let b = rgb.b.0 as f64 / 255.0;
-        let c_max = f64::max(r, f64::max(g, b));
-        let c_min = f64::min(r, f64::min(g, b));
-        let delta = c_max - c_min;
-        let hue = if delta == 0.0 {
-            0.0
-        } else {
-            if c_max == r {
-                60.0 * (0.0 + (g - b) / delta)
-            } else {
-                if c_max == g {
-                    60.0 * (2.0 + (b - r) / delta)
-                } else {
-                    60.0 * (4.0 + (r - g) / delta)
-                }
-            }
-        };
-        let saturation = if c_max == 0.0 { 0.0 } else { delta / c_max };
-        let l = (c_max + c_min) / 2.0;
-        let lightness = if l == 0.0 || l == 1.0 {
-            0.0
-        } else {
-            (c_max - l) / f64::min(l, 1.0 - l)
-        };
-        HSL {
-            hue: Hue(hue),
-            saturation,
-            lightness,
-            opacity: rgb.a,
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum Color {
-    RGB(RGBColor),
-    HSL(HSL),
-}
-
-impl Color {
-    pub fn to_slightly_darker_color(&self) -> String {
-        let hsl = match self {
-            Color::HSL(hsl) => *hsl,
-            Color::RGB(rgb) => HSL::from_rgb(&rgb),
-        };
-        hsl.to_slightly_darker_color().to_hsl()
-    }
-
-    pub fn new(color_mode: &ColorMode) -> Self {
-        match color_mode {
-            ColorMode::RGB => Color::RGB(RGBColor::new()),
-            ColorMode::HSL => Color::HSL(HSL::new()),
-        }
-    }
-
-    pub fn update(&mut self, config: &CircleConfig) {
-        match self {
-            Color::RGB(rgb) => rgb.update(&config),
-            Color::HSL(hsl) => hsl.update(&config),
-        }
-    }
-
     pub fn to_string(&self) -> String {
-        match self {
-            Color::RGB(rgb) => rgb.to_rgba(),
-
-            Color::HSL(hsl) => hsl.to_hsla(),
-        }
+        self.to_hsla()
     }
 }
+
 #[derive(Debug, Clone)]
 pub struct Circle {
     pub position: Position,
@@ -275,7 +155,7 @@ impl Circle {
     pub fn new(config: &Config, circle_config: &CircleConfig) -> Self {
         Circle {
             position: Position::new(&circle_config),
-            color: Color::new(&config.color_mode),
+            color: Color::new(&circle_config),
             radius: config.radius,
         }
     }
@@ -365,7 +245,9 @@ pub struct CircleConfig {
     pub width: f64,
     pub height: f64,
     pub max_position_delta: f64,
-    pub max_color_delta: u8,
+    pub max_color_delta: f64,
+    pub color_min: f64,
+    pub color_max: f64,
     // pub radius: f64,
 }
 
