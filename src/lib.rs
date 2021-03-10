@@ -691,7 +691,7 @@ pub fn main() -> Result<(), JsValue> {
     svg.set_id(&SVG_ID);
     svg.set_attribute("width", &width.to_string())?;
     svg.set_attribute("height", &height.to_string())?;
-    svg.set_attribute("viewBox", &format!("0 0 {} {}", height, width))?;
+    svg.set_attribute("viewBox", &format!("0 0 {} {}", width, height))?;
     body().append_child(&svg)?;
 
     universe.lock().unwrap().add_circle();
