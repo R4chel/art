@@ -498,7 +498,7 @@ impl ColorParamConfigSliderConfig {
                     .lightness_config
                     .max_delta = value
             }),
-            step: 1.,
+            step: self.step,
             title: String::from("Lightness delta"),
         };
 
@@ -508,7 +508,7 @@ impl ColorParamConfigSliderConfig {
             id: String::from(&format!("{}-{}", self.id, "min_value")),
             left_label: Some(String::from("Δ")),
             min: 0.0,
-            max: initial_config.max_value,
+            max: 1.0,
             of_universe: (move |universe| {
                 universe
                     .circle_config
@@ -523,7 +523,7 @@ impl ColorParamConfigSliderConfig {
                     .lightness_config
                     .min_value = value
             }),
-            step: 1.,
+            step: self.step,
             title: String::from("Lightness min_value"),
         };
 
@@ -548,7 +548,7 @@ impl ColorParamConfigSliderConfig {
                     .lightness_config
                     .max_value = value
             }),
-            step: 1.,
+            step: self.step,
             title: String::from("Lightness max_value"),
         };
 
