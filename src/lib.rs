@@ -658,27 +658,43 @@ pub fn main() -> Result<(), JsValue> {
         on_click: (move |_universe, svg| {
             // let image = default_canvas().to_data_url().unwrap();
 
+            web_sys::console::log(&js_sys::Array::from(&JsValue::from_str("1!")));
             let xml_serializer = web_sys::XmlSerializer::new().unwrap();
+
+            web_sys::console::log(&js_sys::Array::from(&JsValue::from_str("2!")));
             let svg_buf = xml_serializer.serialize_to_string(&svg).unwrap();
+
+            web_sys::console::log(&js_sys::Array::from(&JsValue::from_str("3!")));
             let mut blob_type = web_sys::BlobPropertyBag::new();
+
+            web_sys::console::log(&js_sys::Array::from(&JsValue::from_str("4!")));
             blob_type.type_("image/svg+xml;charset=utf-8");
 
+            web_sys::console::log(&js_sys::Array::from(&JsValue::from_str("5!")));
             let blob = web_sys::Blob::new_with_str_sequence_and_options(
                 &JsValue::from_str(&svg_buf),
                 &blob_type,
             )
             .unwrap();
+
+            web_sys::console::log(&js_sys::Array::from(&JsValue::from_str("6!")));
             let url = web_sys::Url::create_object_url_with_blob(&blob).unwrap();
 
+            web_sys::console::log(&js_sys::Array::from(&JsValue::from_str("7!")));
             let anchor = document()
                 .create_element("a")
                 .unwrap()
                 .dyn_into::<web_sys::HtmlAnchorElement>()
                 .unwrap();
 
+            web_sys::console::log(&js_sys::Array::from(&JsValue::from_str("8!")));
             anchor.set_href(&url);
+            web_sys::console::log(&js_sys::Array::from(&JsValue::from_str("9!")));
             anchor.set_download("art.png");
+
+            web_sys::console::log(&js_sys::Array::from(&JsValue::from_str("10!")));
             anchor.click();
+            web_sys::console::log(&js_sys::Array::from(&JsValue::from_str("11!")));
         }),
     };
     let save_button = save_button_config.new_button(&universe, &svg);
