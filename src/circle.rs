@@ -166,13 +166,11 @@ impl Color {
         self.saturation.update(&config.saturation_config);
         self.lightness.update(&config.lightness_config);
         self.opacity.update();
-        // self.saturation = saturating_random_in_range(self.saturation, delta, 0.8, 1.0);
-        // self.lightness = saturating_random_in_range(self.lightness, delta, 0.4, 0.6);
     }
 
     pub fn to_hsl(&self) -> String {
         format!(
-            "hsl({:.3}, {}, {:.4}%)",
+            "hsl({:.3}, {}, {})",
             self.hue.0, self.saturation, self.lightness,
         )
     }
