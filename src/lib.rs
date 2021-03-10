@@ -501,8 +501,8 @@ pub fn main() -> Result<(), JsValue> {
             max_position_delta: 6.3,
             max_color_delta: 2.,
             // TRYING TO GET SOME YELLOW! THIS SHOULD BE CONFIGURABLE
-            color_min: 15.,
-            color_max: 70.,
+            color_min: 45.,
+            color_max: 65.,
         },
         circles: vec![],
         apples: vec![],

@@ -109,8 +109,8 @@ impl Color {
         self.hue.update(&config);
         self.opacity.update();
         let delta = config.max_color_delta as f64 / 360. * 1.5;
-        self.saturation = saturating_random_in_range(self.saturation, delta, 0.4, 1.0);
-        self.lightness = saturating_random_in_range(self.lightness, delta, 0.1, 0.9);
+        self.saturation = saturating_random_in_range(self.saturation, delta, 0.8, 1.0);
+        self.lightness = saturating_random_in_range(self.lightness, delta, 0.4, 0.6);
     }
 
     pub fn to_hsl(&self) -> String {
