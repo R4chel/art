@@ -111,10 +111,30 @@ impl Hue {
 pub struct ColorBit(f64);
 impl ColorBit {
     pub fn new(config: &ColorParamConfig) -> Self {
+        let new_value = config.new_value();
+
+        assert!(
+            new_value >= config.min_value && new_value <= config.max_value,
+            "new_value = {}, config = {:?}",
+            new_value,
+            config
+        );
         ColorBit(config.new_value())
     }
     pub fn update(&mut self, config: &ColorParamConfig) {
-        self.0 = config.update_value(self.0);
+        let new_value = config.update_value(self.0);
+
+        assert!(
+            new_value >= config.min_value
+                && new_value <= config.max_value
+                && new_value > 0.0
+                && new_value < 1.0,
+            "old_value ={}, new_value = {}, config = {:?}",
+            self.0,
+            new_value,
+            config
+        );
+        self.0 = new_value;
     }
 }
 impl Display for ColorBit {
@@ -143,8 +163,8 @@ impl Color {
 
     pub fn update(&mut self, config: &ColorConfig) {
         self.hue.update(&config.hue_config);
-        self.saturation.update(&config.hue_config);
-        self.lightness.update(&config.hue_config);
+        self.saturation.update(&config.saturation_config);
+        self.lightness.update(&config.lightness_config);
         self.opacity.update();
         // self.saturation = saturating_random_in_range(self.saturation, delta, 0.8, 1.0);
         // self.lightness = saturating_random_in_range(self.lightness, delta, 0.4, 0.6);
