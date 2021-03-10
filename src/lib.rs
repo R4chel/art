@@ -671,11 +671,16 @@ pub fn main() -> Result<(), JsValue> {
             blob_type.type_("image/svg+xml;charset=utf-8");
 
             web_sys::console::log(&js_sys::Array::from(&JsValue::from_str("5!")));
-            let blob = web_sys::Blob::new_with_str_sequence_and_options(
-                &JsValue::from_str(&svg_buf),
-                &blob_type,
-            )
-            .unwrap();
+
+            let arr = js_sys::Array::new_with_length(1);
+
+            web_sys::console::log(&js_sys::Array::from(&JsValue::from_str("5.1!")));
+            arr.set(0, JsValue::from_str(&svg_buf));
+
+            web_sys::console::log(&js_sys::Array::from(&JsValue::from_str("5.2!")));
+            let blob =
+                web_sys::Blob::new_with_str_sequence_and_options(&JsValue::from(arr), &blob_type)
+                    .unwrap();
 
             web_sys::console::log(&js_sys::Array::from(&JsValue::from_str("6!")));
             let url = web_sys::Url::create_object_url_with_blob(&blob).unwrap();
@@ -690,7 +695,7 @@ pub fn main() -> Result<(), JsValue> {
             web_sys::console::log(&js_sys::Array::from(&JsValue::from_str("8!")));
             anchor.set_href(&url);
             web_sys::console::log(&js_sys::Array::from(&JsValue::from_str("9!")));
-            anchor.set_download("art.png");
+            anchor.set_download("art.svg");
 
             web_sys::console::log(&js_sys::Array::from(&JsValue::from_str("10!")));
             anchor.click();
