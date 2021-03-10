@@ -186,12 +186,12 @@ fn clear_canvas(canvas: &web_sys::HtmlCanvasElement) {
 
 fn clear_svg() {
     let svg = svg();
-    let child_nodes = svg.child_nodes();
 
-    for i in 0..child_nodes.length() {
-        child_nodes.get(i).map(|node| svg.remove_child(&node));
+    while let Some(child) = svg.first_child() {
+        svg.remove_child(&child).unwrap();
     }
 }
+
 fn clear_board() {
     web_sys::console::log(&js_sys::Array::from(&JsValue::from_str("CLEAR")));
     clear_svg();
