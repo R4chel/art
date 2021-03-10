@@ -71,7 +71,7 @@ impl Opacity {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct ColorParamConfig {
     pub max_delta: f64,
     pub min_value: f64,
@@ -87,7 +87,7 @@ impl ColorParamConfig {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct ColorConfig {
     pub hue_config: ColorParamConfig,
     pub saturation_config: ColorParamConfig,
@@ -290,7 +290,7 @@ impl Apple {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct CircleConfig {
     pub width: f64,
     pub height: f64,

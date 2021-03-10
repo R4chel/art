@@ -10,21 +10,24 @@
 <body>
     <canvas id="canvas"></canvas>
     <canvas id="overlay-canvas"></canvas>
-    <!-- <div id="slider"></div> -->
-
+    <!-- <div id="lightness-slider"></div> -->
     <script type="module">
-     /* var slider = document.getElementById('slider');
+     /* var slider = document.getElementById('lightness-slider');
 
       * noUiSlider.create(slider, {
-      *     start: [20, 80],
+      *     start: [.2, .8],
       *     connect: true,
       *     range: {
       *         'min': 0,
-      *         'max': 100
+      *         'max': 1
       *     }
+      * });
+
+      * slider.noUiSlider.on('update', function() {
+      *     console.log("here");
       * }); */
-     import init
-         from './art.js';
+
+        import init from './art.js';
 
         async function run() {
             await init();

@@ -315,6 +315,281 @@ impl SliderConfig {
             .value_as_number()
     }
 }
+
+#[derive(Clone)]
+struct ColorParamConfigSliderConfig {
+    // title: String,
+    id: String,
+    step: f64,
+    of_universe: fn(&Universe) -> ColorParamConfig,
+    // on_update: fn(&mut Universe, ColorParamConfig) -> (),
+    // left_label: Option<String>,
+}
+
+impl ColorParamConfigSliderConfig {
+    fn hue_create_section_slider(
+        &self,
+        universe: &Arc<Mutex<Universe>>,
+    ) -> web_sys::HtmlDivElement {
+        let div = new_control_div();
+        let initial_config = (self.of_universe)(&universe.lock().unwrap());
+        let delta_slider_config = SliderConfig {
+            id: String::from(&format!("{}-{}", self.id, "delta")),
+            left_label: Some(String::from("Δ")),
+            min: 0.0,
+            max: initial_config.max_value - initial_config.min_value,
+            of_universe: (move |universe| universe.circle_config.color_config.hue_config.max_delta),
+            on_update: (move |universe, value| {
+                universe.circle_config.color_config.hue_config.max_delta = value
+            }),
+            step: self.step,
+            title: String::from("Hue delta"),
+        };
+
+        let delta_slider = SliderConfig::create_slider(&delta_slider_config, &universe);
+
+        let min_value_slider_config = SliderConfig {
+            id: String::from(&format!("{}-{}", self.id, "min_value")),
+            left_label: Some(String::from("Δ")),
+            min: 0.0,
+            max: initial_config.max_value,
+            of_universe: (move |universe| universe.circle_config.color_config.hue_config.min_value),
+            on_update: (move |universe, value| {
+                universe.circle_config.color_config.hue_config.min_value = value
+            }),
+            step: self.step,
+            title: String::from("Hue min_value"),
+        };
+
+        let min_value_slider = SliderConfig::create_slider(&min_value_slider_config, &universe);
+
+        let max_value_slider_config = SliderConfig {
+            id: String::from(&format!("{}-{}", self.id, "max_value")),
+            left_label: Some(String::from("↑")),
+            min: initial_config.min_value,
+            max: initial_config.max_value,
+            of_universe: (move |universe| universe.circle_config.color_config.hue_config.max_value),
+            on_update: (move |universe, value| {
+                universe.circle_config.color_config.hue_config.max_value = value
+            }),
+            step: self.step,
+            title: String::from("Hue max_value"),
+        };
+
+        let max_value_slider = SliderConfig::create_slider(&max_value_slider_config, &universe);
+
+        div.set_inner_text("Hue");
+        div.append_child(&delta_slider).unwrap();
+        div.append_child(&min_value_slider).unwrap();
+        div.append_child(&max_value_slider).unwrap();
+        div
+    }
+
+    fn saturation_create_section_slider(
+        &self,
+        universe: &Arc<Mutex<Universe>>,
+    ) -> web_sys::HtmlDivElement {
+        let div = new_control_div();
+        let initial_config = (self.of_universe)(&universe.lock().unwrap());
+        let delta_slider_config = SliderConfig {
+            id: String::from(&format!("{}-{}", self.id, "delta")),
+            left_label: Some(String::from("Δ")),
+            min: 0.0,
+            max: initial_config.max_value - initial_config.min_value,
+            of_universe: (move |universe| {
+                universe
+                    .circle_config
+                    .color_config
+                    .saturation_config
+                    .max_delta
+            }),
+            on_update: (move |universe, value| {
+                universe
+                    .circle_config
+                    .color_config
+                    .saturation_config
+                    .max_delta = value
+            }),
+            step: self.step,
+            title: String::from("Saturation delta"),
+        };
+
+        let delta_slider = SliderConfig::create_slider(&delta_slider_config, &universe);
+
+        let min_value_slider_config = SliderConfig {
+            id: String::from(&format!("{}-{}", self.id, "min_value")),
+            left_label: Some(String::from("Δ")),
+            min: 0.0,
+            max: initial_config.max_value,
+            of_universe: (move |universe| {
+                universe
+                    .circle_config
+                    .color_config
+                    .saturation_config
+                    .min_value
+            }),
+            on_update: (move |universe, value| {
+                universe
+                    .circle_config
+                    .color_config
+                    .saturation_config
+                    .min_value = value
+            }),
+            step: self.step,
+            title: String::from("Saturation min_value"),
+        };
+
+        let min_value_slider = SliderConfig::create_slider(&min_value_slider_config, &universe);
+
+        let max_value_slider_config = SliderConfig {
+            id: String::from(&format!("{}-{}", self.id, "max_value")),
+            left_label: Some(String::from("↑")),
+            min: initial_config.min_value,
+            max: initial_config.max_value,
+            of_universe: (move |universe| {
+                universe
+                    .circle_config
+                    .color_config
+                    .saturation_config
+                    .max_value
+            }),
+            on_update: (move |universe, value| {
+                universe
+                    .circle_config
+                    .color_config
+                    .saturation_config
+                    .max_value = value
+            }),
+            step: self.step,
+            title: String::from("Saturation max_value"),
+        };
+
+        let max_value_slider = SliderConfig::create_slider(&max_value_slider_config, &universe);
+
+        div.set_inner_text("Saturation");
+        div.append_child(&delta_slider).unwrap();
+        div.append_child(&min_value_slider).unwrap();
+        div.append_child(&max_value_slider).unwrap();
+        div
+    }
+
+    fn lightness_create_section_slider(
+        &self,
+        universe: &Arc<Mutex<Universe>>,
+    ) -> web_sys::HtmlDivElement {
+        let div = new_control_div();
+        let initial_config = (self.of_universe)(&universe.lock().unwrap());
+        let delta_slider_config = SliderConfig {
+            id: String::from(&format!("{}-{}", self.id, "delta")),
+            left_label: Some(String::from("Δ")),
+            min: 0.0,
+            max: initial_config.max_value - initial_config.min_value,
+            of_universe: (move |universe| {
+                universe
+                    .circle_config
+                    .color_config
+                    .lightness_config
+                    .max_delta
+            }),
+            on_update: (move |universe, value| {
+                universe
+                    .circle_config
+                    .color_config
+                    .lightness_config
+                    .max_delta = value
+            }),
+            step: 1.,
+            title: String::from("Lightness delta"),
+        };
+
+        let delta_slider = SliderConfig::create_slider(&delta_slider_config, &universe);
+
+        let min_value_slider_config = SliderConfig {
+            id: String::from(&format!("{}-{}", self.id, "min_value")),
+            left_label: Some(String::from("Δ")),
+            min: 0.0,
+            max: initial_config.max_value,
+            of_universe: (move |universe| {
+                universe
+                    .circle_config
+                    .color_config
+                    .lightness_config
+                    .min_value
+            }),
+            on_update: (move |universe, value| {
+                universe
+                    .circle_config
+                    .color_config
+                    .lightness_config
+                    .min_value = value
+            }),
+            step: 1.,
+            title: String::from("Lightness min_value"),
+        };
+
+        let min_value_slider = SliderConfig::create_slider(&min_value_slider_config, &universe);
+
+        let max_value_slider_config = SliderConfig {
+            id: String::from(&format!("{}-{}", self.id, "max_value")),
+            left_label: Some(String::from("↑")),
+            min: initial_config.min_value,
+            max: initial_config.max_value,
+            of_universe: (move |universe| {
+                universe
+                    .circle_config
+                    .color_config
+                    .lightness_config
+                    .max_value
+            }),
+            on_update: (move |universe, value| {
+                universe
+                    .circle_config
+                    .color_config
+                    .lightness_config
+                    .max_value = value
+            }),
+            step: 1.,
+            title: String::from("Lightness max_value"),
+        };
+
+        let max_value_slider = SliderConfig::create_slider(&max_value_slider_config, &universe);
+
+        div.set_inner_text("Lightness");
+        div.append_child(&delta_slider).unwrap();
+        div.append_child(&min_value_slider).unwrap();
+        div.append_child(&max_value_slider).unwrap();
+        div
+    }
+
+    fn create_hue_section(universe: &Arc<Mutex<Universe>>) -> web_sys::HtmlDivElement {
+        let config = ColorParamConfigSliderConfig {
+            id: String::from("hue-config"),
+            of_universe: (|universe| universe.circle_config.color_config.hue_config),
+            step: 1.,
+        };
+        config.hue_create_section_slider(universe)
+    }
+
+    fn create_saturation_section(universe: &Arc<Mutex<Universe>>) -> web_sys::HtmlDivElement {
+        let config = ColorParamConfigSliderConfig {
+            id: String::from("saturation-config"),
+            of_universe: (|universe| universe.circle_config.color_config.saturation_config),
+            step: 0.05,
+        };
+        config.saturation_create_section_slider(universe)
+    }
+
+    fn create_lightness_section(universe: &Arc<Mutex<Universe>>) -> web_sys::HtmlDivElement {
+        let config = ColorParamConfigSliderConfig {
+            id: String::from("lightness-config"),
+            of_universe: (|universe| universe.circle_config.color_config.lightness_config),
+
+            step: 0.05,
+        };
+        config.lightness_create_section_slider(universe)
+    }
+}
+
 fn label(id: &str, text: &str) -> web_sys::HtmlLabelElement {
     let label = document()
         .create_element("label")
@@ -463,6 +738,28 @@ impl CheckboxConfig {
     }
 }
 
+// fn add_on_click_handler(universe: &Arc<Mutex<Universe>>) {
+//     let id = "special-slider";
+//     let slider = document().get_element_by_id(id).unwrap();
+
+//     let universe_clone = Arc::clone(&universe);
+//     let on_change_handler = Closure::wrap(Box::new(move || {
+//         web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(
+//             "You did a thing!!",
+//         )));
+//         // let value = document()
+//         //     .get_element_by_id(&id)
+//         //     .unwrap()
+//         //     .dyn_into::<web_sys::HtmlElement>()
+//         //     .unwrap()
+//         //     .checked();
+//         // (self.on_change)(&mut universe_clone.lock().unwrap(), is_checked);
+//     }) as Box<dyn FnMut()>);
+
+//     slider.set_onchange(Some(on_change_handler.as_ref().unchecked_ref()));
+//     on_change_handler.forget();
+// }
+
 fn indicate_next_step(no_circles: bool) {
     let class_name = if no_circles { "highlight" } else { "" };
     for button_id in vec![ADD_BUTTON_ID, APPLE_BUTTON_ID] {
@@ -510,13 +807,13 @@ pub fn main() -> Result<(), JsValue> {
 
                 saturation_config: ColorParamConfig {
                     max_delta: 0.05,
-                    min_value: 0.5,
+                    min_value: 0.0,
                     max_value: 1.,
                 },
                 lightness_config: ColorParamConfig {
                     max_delta: 0.05,
-                    min_value: 0.4,
-                    max_value: 0.6,
+                    min_value: 0.0,
+                    max_value: 1.0,
                 },
             },
         },
@@ -719,8 +1016,16 @@ pub fn main() -> Result<(), JsValue> {
     body().append_child(&new_apple_div)?;
     body().append_child(&bug_checkbox)?;
     body().append_child(&distance_slider_div)?;
-    body().append_child(&color_slider_div)?;
+    // body().append_child(&color_slider_div)?;
 
+    body().append_child(&ColorParamConfigSliderConfig::create_hue_section(&universe))?;
+
+    body().append_child(&ColorParamConfigSliderConfig::create_saturation_section(
+        &universe,
+    ))?;
+    body().append_child(&ColorParamConfigSliderConfig::create_lightness_section(
+        &universe,
+    ))?;
     body().append_child(&svg.lock().unwrap())?;
 
     universe.lock().unwrap().add_circle();
