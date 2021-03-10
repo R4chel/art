@@ -24,8 +24,12 @@ fn random_in_range(min: f64, max: f64) -> f64 {
 }
 
 fn saturating_random_in_range(current: f64, delta: f64, min: f64, max: f64) -> f64 {
-    let min = f64::max(min, current - delta);
-    let max = f64::min(max, current + delta);
+    // THIS IS A TEMPORARY HACK BECASEU SHIT BE BROKEN
+    let real_min = f64::min(min, max);
+
+    let real_max = f64::max(min, max);
+    let min = f64::max(real_min, current - delta);
+    let max = f64::min(real_max, current + delta);
     random_in_range(min, max)
 }
 
@@ -111,29 +115,21 @@ impl Hue {
 pub struct ColorBit(f64);
 impl ColorBit {
     pub fn new(config: &ColorParamConfig) -> Self {
-        let new_value = config.new_value();
-
-        assert!(
-            new_value >= config.min_value && new_value <= config.max_value,
-            "new_value = {}, config = {:?}",
-            new_value,
-            config
-        );
         ColorBit(config.new_value())
     }
     pub fn update(&mut self, config: &ColorParamConfig) {
         let new_value = config.update_value(self.0);
 
-        assert!(
-            new_value >= config.min_value
-                && new_value <= config.max_value
-                && new_value > 0.0
-                && new_value < 1.0,
-            "old_value ={}, new_value = {}, config = {:?}",
-            self.0,
-            new_value,
-            config
-        );
+        // assert!(
+        //     new_value >= config.min_value
+        //         && new_value <= config.max_value
+        //         && new_value >= 0.0
+        //         && new_value <= 1.0,
+        //     "old_value ={}, new_value = {}, config = {:?}",
+        //     self.0,
+        //     new_value,
+        //     config
+        // );
         self.0 = new_value;
     }
 }
