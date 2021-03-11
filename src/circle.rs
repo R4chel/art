@@ -195,6 +195,7 @@ pub struct Circle {
     pub position: Position,
     pub color: Color,
     pub radius: f64,
+    pub color_config: ColorConfig,
 }
 
 impl Circle {
@@ -203,12 +204,13 @@ impl Circle {
             position: Position::new(&circle_config),
             color: Color::new(&circle_config.color_config),
             radius: config.radius,
+            color_config: circle_config.color_config,
         }
     }
 
     pub fn update(&mut self, config: &CircleConfig) {
         self.position.update(&config, self.radius);
-        self.color.update(&config.color_config);
+        self.color.update(&self.color_config);
     }
 
     pub fn color(&self) -> String {
