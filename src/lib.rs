@@ -350,7 +350,7 @@ impl ColorParamConfigSliderConfig {
 
         let min_value_slider_config = SliderConfig {
             id: String::from(&format!("{}-{}", self.id, "min_value")),
-            left_label: Some(String::from("Δ")),
+            left_label: Some(String::from("↓")),
             min: 0.0,
             max: initial_config.max_value,
             of_universe: (move |universe| universe.circle_config.color_config.hue_config.min_value),
@@ -418,7 +418,7 @@ impl ColorParamConfigSliderConfig {
 
         let min_value_slider_config = SliderConfig {
             id: String::from(&format!("{}-{}", self.id, "min_value")),
-            left_label: Some(String::from("Δ")),
+            left_label: Some(String::from("↓")),
             min: 0.0,
             max: initial_config.max_value,
             of_universe: (move |universe| {
@@ -506,7 +506,7 @@ impl ColorParamConfigSliderConfig {
 
         let min_value_slider_config = SliderConfig {
             id: String::from(&format!("{}-{}", self.id, "min_value")),
-            left_label: Some(String::from("Δ")),
+            left_label: Some(String::from("↓")),
             min: 0.0,
             max: 1.0,
             of_universe: (move |universe| {
