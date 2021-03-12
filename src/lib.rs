@@ -68,17 +68,19 @@ fn draw_circle(
     context.stroke();
 }
 
-pub fn render_svg(universe: &Universe, svg: &web_sys::SvgElement) {
-    match universe.config.status {
-        Status::PAUSED => {}
-        Status::RUNNING => {
-            for circle in universe.circles.iter() {
-                svg.append_child(&circle_to_svg(&circle)).unwrap();
-            }
+// Long term don't want render to mutate universe. Something to think about
+pub fn render_svg(universe: &mut Universe, svg: &web_sys::SvgElement) {
+    for circle in universe.circles.iter_mut() {
+        if circle.dirty {
+            svg.append_child(&circle_to_svg(&circle)).unwrap();
+            circle.dirty = false;
+        }
+    }
 
-            for apple in universe.apples.iter() {
-                svg.append_child(&circle_to_svg(&apple.circle)).unwrap();
-            }
+    for apple in universe.apples.iter_mut() {
+        if apple.circle.dirty {
+            svg.append_child(&circle_to_svg(&apple.circle)).unwrap();
+            apple.circle.dirty = false;
         }
     }
 }
@@ -785,7 +787,7 @@ pub fn main() -> Result<(), JsValue> {
     update_canvas_size(height.into(), width.into());
     let universe = Arc::new(Mutex::new(Universe {
         config: Config {
-            status: Status::PAUSED,
+            status: Status::RUNNING,
             speed: Speed::NORMAL,
             bug_checkbox: false,
             radius: 10.,
@@ -1026,7 +1028,9 @@ pub fn main() -> Result<(), JsValue> {
         let mut universe = universe.lock().unwrap();
         for _ in 0..steps {
             universe.tick();
-            render_svg(&universe, &svg_clone.lock().unwrap());
+
+            // Long term don't want render to mutate universe. Something to think about
+            render_svg(&mut universe, &svg_clone.lock().unwrap());
         }
 
         request_animation_frame(main_loop.borrow().as_ref().unwrap());
