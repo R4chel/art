@@ -318,6 +318,114 @@ impl SliderConfig {
     }
 }
 
+// pub struct RangeConfig {
+//     absolute_max : f64,
+//     absolue_min : f64,
+//     step : f64,
+// }
+
+// pub struct MoreDetailedColorParamConfig {
+//     delta : RangeConfig,
+//     min : RangeConfig,
+//     max : RangeConfig,
+
+// }
+
+// struct ColorParamSubsection {
+//     name: String
+//         ,
+//     emoji: String,
+//     of_color_param_config : fn(&ColorParamConfig) -> f64,
+//     on_update: fn(&mut ColorParamConfig, f64) -> (),
+//     range_config : RangeConfig
+// }
+
+// struct ColorParamConfigSliderConfigV2 {
+//     // title: String,
+//     id: String,
+//     step: f64,
+//     of_universe: fn(&Universe) -> ColorParamConfig,
+//     config_config : MoreDetailedColorParamConfig,
+//     // on_update: fn(&mut Universe, ColorParamConfig) -> (),
+//     // left_label: Option<String>,
+// }
+
+// impl ColorParamConfigSliderConfigV2 {
+    
+
+//     fn one_field_section(&self, subsection_config :ColorParamSubsection,  universe: &Arc<Mutex<Universe>>)-> web_sys::HtmlDivElement {
+//         let slider_config = SliderConfig {
+//             id: String::from(&format!("{}-{}", self.id, subsection_config.name)),
+//             title: String::from(&format!("{} {}", self.id, subsection_config.name)),
+//             left_label: Some(subsection_config.emoji),
+//             min: subsection_config.range_config.absolue_min, 
+//             max: subsection_config.range_config.absolute_max,
+//             of_universe: (move |universe| ( subsection_config.of_color_param_config )( &(self.of_universe)(universe))),
+//             on_update: (move |_universe, _value| {
+//                 // (subsection_config.on_update)((self.on_update)universe )
+//             }),
+//             step: subsection_config.range_config.step,
+//         };
+
+//         let delta_slider = SliderConfig::create_slider(&slider_config, &universe);
+//         delta_slider   
+//     }
+
+//     fn create_config_section(
+//         &self,
+//         universe: &Arc<Mutex<Universe>>,
+//     ) -> web_sys::HtmlDivElement {
+//         let div = new_control_div();
+//         let initial_config = (self.of_universe)(&universe.lock().unwrap());
+
+//         let delta_slider =
+//             self.one_field_section(
+//                 ColorParamSubsection {
+                    
+//                 }
+//                 , universe);
+//         let min_value_slider_config = SliderConfig {
+//             id: String::from(&format!("{}-{}", self.id, "min_value")),
+//             left_label: Some(String::from("↓")),
+//             min: 0.0,
+//             max: initial_config.max_value,
+//             of_universe: (move |universe| universe.circle_config.color_config.hue_config.min_value),
+//             on_update: (move |universe, value| {
+//                 universe.circle_config.color_config.hue_config.min_value = value
+//             }),
+//             step: self.step,
+//             title: String::from("Hue min_value"),
+//         };
+
+//         let min_value_slider = SliderConfig::create_slider(&min_value_slider_config, &universe);
+
+//         let max_value_slider_config = SliderConfig {
+//             id: String::from(&format!("{}-{}", self.id, "max_value")),
+//             left_label: Some(String::from("↑")),
+//             min: initial_config.min_value,
+//             max: initial_config.max_value,
+//             of_universe: (move |universe| universe.circle_config.color_config.hue_config.max_value),
+//             on_update: (move |universe, value| {
+//                 universe.circle_config.color_config.hue_config.max_value = value
+//             }),
+//             step: self.step,
+//             title: String::from("Hue max_value"),
+//         };
+
+//         let max_value_slider = SliderConfig::create_slider(&max_value_slider_config, &universe);
+
+//         div.set_inner_text("Hue");
+//         div.append_child(&delta_slider).unwrap();
+//         div.append_child(&min_value_slider).unwrap();
+//         div.append_child(&max_value_slider).unwrap();
+//         div
+//     }
+// }
+
+
+
+
+
 #[derive(Clone)]
 struct ColorParamConfigSliderConfig {
     // title: String,
@@ -329,6 +437,8 @@ struct ColorParamConfigSliderConfig {
 }
 
 impl ColorParamConfigSliderConfig {
+    
+     
     fn hue_create_section_slider(
         &self,
         universe: &Arc<Mutex<Universe>>,
@@ -812,6 +922,7 @@ pub fn main() -> Result<(), JsValue> {
                     min_value: 0.0,
                     max_value: 1.,
                 },
+
                 lightness_config: ColorParamConfig {
                     max_delta: 0.05,
                     min_value: 0.0,
