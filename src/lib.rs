@@ -194,18 +194,18 @@ fn clear_board(svg: &mut web_sys::SvgElement) {
 }
 
 #[derive(Clone)]
-struct SliderConfig<OfUniverse:FnOnce(&Universe) -> f64> {
+struct SliderConfig{
     title: String,
     id: String,
     min: f64,
     max: f64,
     step: f64,
-    of_universe: OfUniverse,
+    of_universe: fn(&Universe) -> f64,
     on_update: fn(&mut Universe, f64) -> (),
     left_label: Option<String>,
 }
 
-impl<OfUniverse:FnOnce(&Universe) -> f64> SliderConfig<OfUniverse> {
+impl SliderConfig {
     fn create_slider(&self, universe: &Arc<Mutex<Universe>>) -> web_sys::HtmlDivElement {
         let slider = document()
             .create_element("input")
@@ -261,7 +261,7 @@ impl<OfUniverse:FnOnce(&Universe) -> f64> SliderConfig<OfUniverse> {
         let slider_on_change_handler = Closure::wrap(Box::new(move || {
             web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(&format!(
                 "You updated the {}!",
-                &slider_id
+                &self_clone.id
             ))));
 
             let value = self_clone.get_value();
