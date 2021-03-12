@@ -256,16 +256,17 @@ impl<OfUniverse:FnOnce(&Universe) -> f64> SliderConfig<OfUniverse> {
         div.append_child(&display).unwrap();
 
         let slider_id = String::from(&self.id);
+        let self_clone = self.clone();
         let slider_universe = Arc::clone(&universe);
         let slider_on_change_handler = Closure::wrap(Box::new(move || {
             web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(&format!(
                 "You updated the {}!",
-                &self.id
+                &slider_id
             ))));
 
-            let value = self.get_value();
+            let value = self_clone.get_value();
 
-            (&self.on_update)(&mut slider_universe.lock().unwrap(), value);
+            (&self_clone.on_update)(&mut slider_universe.lock().unwrap(), value);
 
             let display = document()
                 .get_element_by_id(&display_id)
