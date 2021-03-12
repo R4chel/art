@@ -194,18 +194,18 @@ fn clear_board(svg: &mut web_sys::SvgElement) {
 }
 
 #[derive(Clone)]
-struct SliderConfig{
+struct SliderConfig<OfUniverse : FnOnce(&Universe) -> f64>{
     title: String,
     id: String,
     min: f64,
     max: f64,
     step: f64,
-    of_universe: fn(&Universe) -> f64,
+    of_universe: OfUniverse,
     on_update: fn(&mut Universe, f64) -> (),
     left_label: Option<String>,
 }
 
-impl SliderConfig {
+impl<OfUniverse: FnOnce(&Universe) -> f64> SliderConfig<OfUniverse> {
     fn create_slider(&self, universe: &Arc<Mutex<Universe>>) -> web_sys::HtmlDivElement {
         let slider = document()
             .create_element("input")
