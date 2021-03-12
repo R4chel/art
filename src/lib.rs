@@ -851,22 +851,6 @@ pub fn main() -> Result<(), JsValue> {
 
     let distance_slider_div = SliderConfig::create_slider(&distance_slider_config, &universe);
 
-    let color_slider_id = "color-slider";
-    let color_slider_config = SliderConfig {
-        id: String::from(color_slider_id),
-        title: String::from("Color Speed"),
-        left_label: Some(String::from("🌈")),
-        min: 0.0,
-        max: 50.0,
-        step: 0.1,
-        of_universe: (move |universe| universe.circle_config.color_config.hue_config.max_delta),
-        on_update: (move |universe, value| {
-            universe.circle_config.color_config.hue_config.max_delta = value
-        }),
-    };
-
-    let color_slider_div = SliderConfig::create_slider(&color_slider_config, &universe);
-
     let radius_slider_id = "radius-slider";
     let radius_slider_config = SliderConfig {
         id: String::from(radius_slider_id),
