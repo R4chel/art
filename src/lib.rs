@@ -213,18 +213,16 @@ impl<OfUniverse: FnOnce(&Universe) -> f64 + Clone + 'static> SliderConfig<OfUniv
             .dyn_into::<web_sys::HtmlInputElement>()
             .unwrap();
 
+
+        let of_universe = self.of_universe.clone();
+        let current_value = of_universe(&*universe.lock().unwrap()).to_string();
+
         slider.set_class_name("slider");
         slider.set_id(&self.id);
         slider.set_name(&self.id);
         slider.set_type("range");
         slider.set_min(&self.min.to_string());
-
-
-        let bar = self.of_universe.clone();
-        let foo : f64 = bar(&*universe.lock().unwrap());
-        let value =foo.to_string();
-
-        slider.set_value(&value);
+        slider.set_value(&current_value);
         slider.set_max(&self.max.to_string());
         slider.set_step(&self.step.to_string());
         slider.set_title(&self.title);
@@ -245,7 +243,7 @@ impl<OfUniverse: FnOnce(&Universe) -> f64 + Clone + 'static> SliderConfig<OfUniv
 
         display.set_type("number");
         display.set_min(&self.min.to_string());
-        display.set_value(&value);
+        display.set_value(&current_value);
         display.set_max(&self.max.to_string());
         display.set_step(&self.step.to_string());
 
