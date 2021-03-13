@@ -306,7 +306,7 @@ pub struct Config {
     pub radius: f64,
     pub apple_steps: u32,
     pub bug_checkbox: bool,
-   pub color_mode: ColorMode,
+    pub color_mode: ColorMode,
     pub initial_height: f64,
     pub initial_width: f64,
 }
