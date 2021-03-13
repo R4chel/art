@@ -194,18 +194,24 @@ fn clear_board(svg: &mut web_sys::SvgElement) {
 }
 
 #[derive(Clone)]
-struct SliderConfig<OfUniverse : FnOnce(&Universe) -> f64  + Clone + 'static>  {
+struct SliderConfig<OfUniverse : FnOnce(&Universe) -> f64  + Clone + 'static
+                    ,
+                    OnUpdate : Fn(&mut Universe, f64) -> () + Clone + 'static
+                    >  {
     title: String,
     id: String,
     min: f64,
     max: f64,
     step: f64,
     of_universe: OfUniverse,
-    on_update: fn(&mut Universe, f64) -> (),
+    on_update: OnUpdate,
     left_label: Option<String>,
 }
 
-impl<OfUniverse: FnOnce(&Universe) -> f64 + Clone + 'static> SliderConfig<OfUniverse> {
+impl<OfUniverse: FnOnce(&Universe) -> f64 + Clone + 'static,
+
+     OnUpdate : Fn(&mut Universe, f64) -> () + Clone + 'static
+     > SliderConfig<OfUniverse, OnUpdate> {
     fn create_slider(&self, universe: &Arc<Mutex<Universe>>) -> web_sys::HtmlDivElement {
         let slider = document()
             .create_element("input")
@@ -240,7 +246,6 @@ impl<OfUniverse: FnOnce(&Universe) -> f64 + Clone + 'static> SliderConfig<OfUniv
         let display_id_clone = display_id.clone();
         display.set_id(&display_id);
         display.set_name(&display_id);
-
         display.set_type("number");
         display.set_min(&self.min.to_string());
         display.set_value(&current_value);
@@ -270,7 +275,7 @@ impl<OfUniverse: FnOnce(&Universe) -> f64 + Clone + 'static> SliderConfig<OfUniv
 
             let value = self_clone.get_value();
 
-            (&self_clone.on_update)(&mut slider_universe.lock().unwrap(), value);
+            (self_clone.on_update)(&mut slider_universe.lock().unwrap(), value);
 
             let display = document()
                 .get_element_by_id(&display_id)
