@@ -293,6 +293,7 @@ impl Apple {
 
 #[derive(Debug, Clone, Copy)]
 pub struct CircleConfig {
+    // TODO move height and width to universe
     pub width: f64,
     pub height: f64,
     pub max_position_delta: f64,
