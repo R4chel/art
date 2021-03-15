@@ -194,10 +194,10 @@ fn clear_board(svg: &mut web_sys::SvgElement) {
 }
 
 #[derive(Clone)]
-struct SliderConfig<OfUniverse : Fn(&Universe) -> f64  + Clone + 'static
-                    ,
-                    OnUpdate : Fn(&mut Universe, f64) -> () + Clone + 'static
-                    >  {
+struct SliderConfig<
+    OfUniverse: Fn(&Universe) -> f64 + Clone + 'static,
+    OnUpdate: Fn(&mut Universe, f64) -> () + Clone + 'static,
+> {
     title: String,
     id: String,
     min: f64,
@@ -208,17 +208,17 @@ struct SliderConfig<OfUniverse : Fn(&Universe) -> f64  + Clone + 'static
     left_label: Option<String>,
 }
 
-impl<OfUniverse: Fn(&Universe) -> f64 + Clone + 'static,
-
-     OnUpdate : Fn(&mut Universe, f64) -> () + Clone + 'static
-     > SliderConfig<OfUniverse, OnUpdate> {
+impl<
+        OfUniverse: Fn(&Universe) -> f64 + Clone + 'static,
+        OnUpdate: Fn(&mut Universe, f64) -> () + Clone + 'static,
+    > SliderConfig<OfUniverse, OnUpdate>
+{
     fn create_slider(&self, universe: &Arc<Mutex<Universe>>) -> web_sys::HtmlDivElement {
         let slider = document()
             .create_element("input")
             .unwrap()
             .dyn_into::<web_sys::HtmlInputElement>()
             .unwrap();
-
 
         let of_universe = self.of_universe.clone();
         let current_value = of_universe(&*universe.lock().unwrap()).to_string();
@@ -327,146 +327,124 @@ impl<OfUniverse: Fn(&Universe) -> f64 + Clone + 'static,
     }
 }
 
-#[derive (Clone)]
+#[derive(Clone)]
 pub struct RangeConfig {
-    absolute_max : f64,
-    absolute_min : f64,
-    step : f64,
+    absolute_max: f64,
+    absolute_min: f64,
+    step: f64,
 }
 
-#[derive (Clone)]
+#[derive(Clone)]
 pub struct MoreDetailedColorParamConfig {
-    delta : RangeConfig,
-    min : RangeConfig,
-    max : RangeConfig,
-
+    delta: RangeConfig,
+    min: RangeConfig,
+    max: RangeConfig,
 }
 
-
-#[derive (Clone)]
-struct ColorParamSubsection<
-
-        OnUpdate : Fn(&mut Universe, f64) -> () + Clone + 'static>
-    {
-    name: String
-        ,
+#[derive(Clone)]
+struct ColorParamSubsection<OnUpdate: Fn(&mut Universe, f64) -> () + Clone + 'static> {
+    name: String,
     emoji: String,
-    of_color_param_config : fn(&ColorParamConfig) -> f64,
+    of_color_param_config: fn(&ColorParamConfig) -> f64,
     on_update: OnUpdate,
-    range_config : RangeConfig
+    range_config: RangeConfig,
 }
 
-#[derive (Clone)]
+#[derive(Clone)]
 struct ColorParamConfigSliderConfigV2 {
     // title: String,
     id: String,
     step: f64,
     of_universe: fn(&Universe) -> ColorParamConfig,
-    config_config : MoreDetailedColorParamConfig,
+    config_config: MoreDetailedColorParamConfig,
     on_update: fn(&mut Universe, ColorParamConfig) -> (),
-    // left_label: Option<String>,
 }
 
-impl
-
-    ColorParamConfigSliderConfigV2 {
-    
-
-        fn
-            one_field_section
-            <OnUpdate : Fn(&mut Universe, f64) -> () + Clone + 'static>
-            (&self, subsection_config :ColorParamSubsection<OnUpdate>,  universe: &Arc<Mutex<Universe>>)-> web_sys::HtmlDivElement {
-
-                let subsection_config = subsection_config.clone();
-                let subsection_config_clone = subsection_config.clone();
-                let subsection_config_clone2 = subsection_config.clone();
-                let self_clone = self.clone();
+impl ColorParamConfigSliderConfigV2 {
+    fn one_field_section<OnUpdate: Fn(&mut Universe, f64) -> () + Clone + 'static>(
+        &self,
+        subsection_config: ColorParamSubsection<OnUpdate>,
+        universe: &Arc<Mutex<Universe>>,
+    ) -> web_sys::HtmlDivElement {
+        let subsection_config = subsection_config.clone();
+        let subsection_config_clone = subsection_config.clone();
+        let subsection_config_clone2 = subsection_config.clone();
+        let self_clone = self.clone();
         let slider_config = SliderConfig {
             id: String::from(&format!("{}-{}", self.id, subsection_config.name)),
             title: String::from(&format!("{} {}", self.id, subsection_config.name)),
             left_label: Some(subsection_config.emoji.clone()),
-            min: subsection_config.range_config.absolute_min, 
+            min: subsection_config.range_config.absolute_min,
             max: subsection_config.range_config.absolute_max,
-            of_universe: (move |universe|  ( subsection_config_clone.of_color_param_config )( &(self_clone.of_universe)(universe))),
+            of_universe: (move |universe| {
+                (subsection_config_clone.of_color_param_config)(&(self_clone.of_universe)(universe))
+            }),
             on_update: (move |universe, value| {
-
-                
                 (subsection_config_clone2.on_update)(universe, value);
             }),
             step: subsection_config.range_config.step,
         };
 
-        let delta_slider = SliderConfig::create_slider(&slider_config, &universe);
-        delta_slider   
+        let slider = SliderConfig::create_slider(&slider_config, &universe);
+        slider
     }
 
-    fn create_config_section(
-        self,
-        universe: &Arc<Mutex<Universe>>,
-    ) -> web_sys::HtmlDivElement {
+    fn create_config_section(self, universe: &Arc<Mutex<Universe>>) -> web_sys::HtmlDivElement {
         let div = new_control_div();
-        let initial_config = (self.of_universe)(&universe.lock().unwrap());
 
-        let self_clone = self.clone();
-        let clone1 = self.clone();
-        let clone2 = self.clone();
-        let delta_slider =
-            self.one_field_section(
-                ColorParamSubsection {
-                    name : String::from("delta"),
-                    emoji : String::from("Δ"),
-                    of_color_param_config: ( |color_param_config| color_param_config.max_delta),
-                    on_update:(move |universe, value| ((self_clone.of_universe)(universe)).max_delta = value),
-                    // TODO put real things
-                    range_config: RangeConfig {
-                        absolute_min : 0.111111,
-                        absolute_max: 0.9999999,
-                        step: 0.123,
-                    }
+        // TODO determine if these clonse are necessary
+        let delta_clone = self.clone();
+        let min_clone = self.clone();
+        let max_clone = self.clone();
+        let MoreDetailedColorParamConfig{ delta, min, max} = self.clone().config_config;
+        let delta_slider = self.one_field_section(
+            ColorParamSubsection {
+                name: String::from("delta"),
+                emoji: String::from("Δ"),
+                of_color_param_config: (|color_param_config| color_param_config.max_delta),
+                on_update: (move |universe, value| {
+                    ((delta_clone.of_universe)(universe)).max_delta = value
+                }),
+                range_config: delta,
+            },
+            universe,
+        );
 
-                }
-                , universe);
-        let min_value_slider_config = SliderConfig {
-            id: String::from(&format!("{}-{}", clone1.id, "min_value")),
-            left_label: Some(String::from("↓")),
-            min: 0.0,
-            max: initial_config.max_value,
-            of_universe: (move |universe| universe.circle_config.color_config.hue_config.min_value),
-            on_update: (move |universe, value| {
-                universe.circle_config.color_config.hue_config.min_value = value
-            }),
-            step: clone1.step,
-            title: String::from("Hue min_value"),
-        };
+        let min_slider = self.one_field_section(
+            ColorParamSubsection {
+                name: String::from("min"),
+                emoji: String::from("↓"),
+                of_color_param_config: (|color_param_config| color_param_config.min_value),
+                on_update: (move |universe, value| {
+                    ((min_clone.of_universe)(universe)).min_value = value
+                }),
+                // TODO put real things
+                range_config: min 
+            },
+            universe,
+        );
 
-        let min_value_slider = SliderConfig::create_slider(&min_value_slider_config, &universe);
 
-        let max_value_slider_config = SliderConfig {
-            id: String::from(&format!("{}-{}", clone2.id, "max_value")),
-            left_label: Some(String::from("↑")),
-            min: initial_config.min_value,
-            max: initial_config.max_value,
-            of_universe: (move |universe| universe.circle_config.color_config.hue_config.max_value),
-            on_update: (move |universe, value| {
-                universe.circle_config.color_config.hue_config.max_value = value
-            }),
-            step: self.step,
-            title: String::from("Hue max_value"),
-        };
+        let max_slider = self.one_field_section(
+            ColorParamSubsection {
+                name: String::from("max"),
+                emoji: String::from("Δ"),
+                of_color_param_config: (|color_param_config| color_param_config.max_value),
+                on_update: (move |universe, value| {
+                    ((max_clone.of_universe)(universe)).max_value = value
+                }),
+                range_config: max,
+            },
+            universe,
+        );
 
-        let max_value_slider = SliderConfig::create_slider(&max_value_slider_config, &universe);
-
-        div.set_inner_text("Hue");
+        div.set_inner_text(&self.id);
         div.append_child(&delta_slider).unwrap();
-        div.append_child(&min_value_slider).unwrap();
-        div.append_child(&max_value_slider).unwrap();
+        div.append_child(&min_slider).unwrap();
+        div.append_child(&max_slider).unwrap();
         div
     }
 }
-
-
-
-
 
 #[derive(Clone)]
 struct ColorParamConfigSliderConfig {
@@ -479,8 +457,6 @@ struct ColorParamConfigSliderConfig {
 }
 
 impl ColorParamConfigSliderConfig {
-    
-     
     fn hue_create_section_slider(
         &self,
         universe: &Arc<Mutex<Universe>>,

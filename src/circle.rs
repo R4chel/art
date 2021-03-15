@@ -196,7 +196,7 @@ pub struct Circle {
     pub color: Color,
     pub radius: f64,
     pub color_config: ColorConfig,
-    pub dirty: bool, 
+    pub dirty: bool,
 }
 
 impl Circle {
