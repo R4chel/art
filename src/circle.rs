@@ -185,6 +185,9 @@ impl Color {
         }
     }
 
+    pub fn to_opaque_string(&self) -> String {
+        self.to_hsl()
+    }
     pub fn to_string(&self) -> String {
         self.to_hsla()
     }
@@ -218,6 +221,9 @@ impl Circle {
 
     pub fn color(&self) -> String {
         self.color.to_string()
+    }
+    pub fn opaque_color(&self) -> String {
+        self.color.to_opaque_string()
     }
 }
 

@@ -37,6 +37,11 @@ fn circle_to_svg(circle: &Circle) -> web_sys::SvgCircleElement {
         .set_attribute("cy", &circle.position.y.to_string())
         .unwrap();
     svg_circle.set_attribute("fill", &circle.color()).unwrap();
+    // svg_circle
+    //     .set_attribute("stroke", &circle.opaque_color())
+    //     .unwrap();
+
+    // svg_circle.set_attribute("stroke-width", "2").unwrap();
     svg_circle
 }
 
@@ -397,7 +402,7 @@ impl ColorParamConfigSliderConfigV2 {
         let delta_clone = self.clone();
         let min_clone = self.clone();
         let max_clone = self.clone();
-        let MoreDetailedColorParamConfig{ delta, min, max} = self.clone().config_config;
+        let MoreDetailedColorParamConfig { delta, min, max } = self.clone().config_config;
         let delta_slider = self.one_field_section(
             ColorParamSubsection {
                 name: String::from("delta"),
@@ -420,11 +425,10 @@ impl ColorParamConfigSliderConfigV2 {
                     ((min_clone.of_universe)(universe)).min_value = value
                 }),
                 // TODO put real things
-                range_config: min 
+                range_config: min,
             },
             universe,
         );
-
 
         let max_slider = self.one_field_section(
             ColorParamSubsection {
@@ -908,25 +912,27 @@ fn update_canvas_size(height: f64, width: f64) {
     }
 }
 
-fn update_dimensions(width : f64, height : f64) {
-    let svg = document().get_element_by_id(SVG_ID).unwrap().
-        dyn_into::<web_sys::SvgElement>()
+fn update_dimensions(width: f64, height: f64) {
+    let svg = document()
+        .get_element_by_id(SVG_ID)
+        .unwrap()
+        .dyn_into::<web_sys::SvgElement>()
         .map_err(|_| ())
         .unwrap();
 
-
     svg.set_attribute("width", &width.to_string()).unwrap();
     svg.set_attribute("height", &height.to_string()).unwrap();
-    svg.set_attribute("viewBox", &format!("0 0 {} {}", width, height)).unwrap();
+    svg.set_attribute("viewBox", &format!("0 0 {} {}", width, height))
+        .unwrap();
 }
-
-
 
 // Called when the wasm module is instantiated
 #[wasm_bindgen(start)]
 pub fn main() -> Result<(), JsValue> {
-    let width = body().client_width();
-    let height = body().client_height();
+    let width = 1000.0;
+    let height = 1000.0;
+    // let width = body().client_width();
+    // let height = body().client_height();
     update_canvas_size(height.into(), width.into());
     let universe = Arc::new(Mutex::new(Universe {
         config: Config {
@@ -1128,57 +1134,52 @@ pub fn main() -> Result<(), JsValue> {
     };
     let save_button = save_button_config.new_button(&universe, &svg);
 
+    let width_slider_config = SliderConfig {
+        id: String::from("Width"),
+        title: String::from("Width"),
+        left_label: Some(String::from("↔")),
+        min: 0.0,
+        max: 10000.0,
+        step: 100.0,
+        of_universe: (move |universe| universe.circle_config.width),
+        on_update: (move |universe, width| {
+            let svg = document()
+                .get_element_by_id(SVG_ID)
+                .unwrap()
+                .dyn_into::<web_sys::SvgElement>()
+                .map_err(|_| ())
+                .unwrap();
 
-    let width_slider_config = 
-        SliderConfig {
-            id: String::from("Width"),
-            title: String::from("Width"),
-            left_label: Some(String::from("↔")),
-            min: 0.0,
-            max: 10000.0,
-            step: 100.0,
-            of_universe: (move |universe| universe.circle_config.width),
-            on_update: (move |universe, width| {
+            svg.set_attribute("width", &width.to_string()).unwrap();
 
-                        let svg = document().get_element_by_id(SVG_ID).unwrap().
-                        dyn_into::<web_sys::SvgElement>()
-                        .map_err(|_| ())
-                        .unwrap();
-
-
-                svg.set_attribute("width", &width.to_string()).unwrap();
-
-                universe.circle_config.width= width;
-            }
-            ),
-        };
+            universe.circle_config.width = width;
+        }),
+    };
 
     let width_slider = width_slider_config.create_slider(&universe);
 
-    let height_slider_config = 
-        SliderConfig {
-            id: String::from("Height"),
-            title: String::from("Height"),
-            left_label: Some(String::from("↨")),
-            min: 0.0,
-            max: 10000.0,
-            step: 100.0,
-            of_universe: (move |universe| universe.circle_config.height),
+    let height_slider_config = SliderConfig {
+        id: String::from("Height"),
+        title: String::from("Height"),
+        left_label: Some(String::from("↨")),
+        min: 0.0,
+        max: 10000.0,
+        step: 100.0,
+        of_universe: (move |universe| universe.circle_config.height),
 
+        on_update: (move |universe, height| {
+            let svg = document()
+                .get_element_by_id(SVG_ID)
+                .unwrap()
+                .dyn_into::<web_sys::SvgElement>()
+                .map_err(|_| ())
+                .unwrap();
 
-            on_update: (move |universe, height| {
+            svg.set_attribute("height", &height.to_string()).unwrap();
 
-                let svg = document().get_element_by_id(SVG_ID).unwrap().
-                    dyn_into::<web_sys::SvgElement>()
-                    .map_err(|_| ())
-                    .unwrap();
-
-
-                svg.set_attribute("height", &height.to_string()).unwrap();
-
-                universe.circle_config.height= height;
-            })
-        };
+            universe.circle_config.height = height;
+        }),
+    };
 
     let height_slider = height_slider_config.create_slider(&universe);
 
@@ -1201,7 +1202,7 @@ pub fn main() -> Result<(), JsValue> {
     body().append_child(&save_button)?;
     body().append_child(&trash_button)?;
 
-    body().append_child(&update_size_div)?;
+    // body().append_child(&update_size_div)?;
     body().append_child(&new_circle_div)?;
     body().append_child(&new_apple_div)?;
     body().append_child(&bug_checkbox)?;
