@@ -61,7 +61,7 @@ struct Opacity(f64);
 
 impl Display for Opacity {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+        write!(f, "{:.2}", self.0)
     }
 }
 
@@ -96,6 +96,7 @@ pub struct ColorConfig {
     pub hue_config: ColorParamConfig,
     pub saturation_config: ColorParamConfig,
     pub lightness_config: ColorParamConfig,
+    pub rgb_config: ColorParamConfig,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -140,16 +141,16 @@ impl Display for ColorBit {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct Color {
+pub struct HSLColor {
     hue: Hue,
     saturation: ColorBit,
     lightness: ColorBit,
     opacity: Opacity,
 }
 
-impl Color {
+impl HSLColor {
     pub fn new(config: &ColorConfig) -> Self {
-        Color {
+        HSLColor {
             hue: Hue::new(&config.hue_config),
             saturation: ColorBit::new(&config.saturation_config),
             lightness: ColorBit::new(&config.lightness_config),
@@ -191,6 +192,112 @@ impl Color {
     pub fn to_string(&self) -> String {
         self.to_hsla()
     }
+
+    fn from_rgb(rgb: &RGBColor) -> HSLColor {
+        let r = rgb.r.0 as f64 / 255.0;
+        let g = rgb.g.0 as f64 / 255.0;
+        let b = rgb.b.0 as f64 / 255.0;
+        let c_max = f64::max(r, f64::max(g, b));
+        let c_min = f64::min(r, f64::min(g, b));
+        let delta = c_max - c_min;
+        let hue = if delta == 0.0 {
+            0.0
+        } else {
+            if c_max == r {
+                60.0 * (0.0 + (g - b) / delta)
+            } else {
+                if c_max == g {
+                    60.0 * (2.0 + (b - r) / delta)
+                } else {
+                    60.0 * (4.0 + (r - g) / delta)
+                }
+            }
+        };
+        let saturation = if c_max == 0.0 { 0.0 } else { delta / c_max };
+        let l = (c_max + c_min) / 2.0;
+        let lightness = if l == 0.0 || l == 1.0 {
+            0.0
+        } else {
+            (c_max - l) / f64::min(l, 1.0 - l)
+        };
+        HSLColor {
+            hue: Hue(hue),
+            saturation: ColorBit(saturation),
+            lightness: ColorBit(lightness),
+            opacity: rgb.a,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct RGBColor {
+    r: ColorBit,
+    g: ColorBit,
+    b: ColorBit,
+    a: Opacity,
+}
+
+impl RGBColor {
+    fn new(config: &ColorConfig) -> Self {
+        RGBColor {
+            r: ColorBit::new(&config.rgb_config),
+            g: ColorBit::new(&config.rgb_config),
+            b: ColorBit::new(&config.rgb_config),
+            a: Opacity::rand(),
+        }
+    }
+
+    fn to_rgba(&self) -> String {
+        format!(
+            "rgb({:.2}, {:.2}, {:.2}, {})",
+            self.r.0, self.g.0, self.b.0, self.a
+        )
+    }
+
+    fn update(&mut self, config: &ColorConfig) {
+        self.r.update(&config.rgb_config);
+        self.g.update(&config.rgb_config);
+        self.b.update(&config.rgb_config);
+        self.a.update();
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum Color {
+    RGB(RGBColor),
+    HSL(HSLColor),
+}
+
+impl Color {
+    pub fn to_slightly_darker_color(&self) -> String {
+        let hsl = match self {
+            Color::HSL(hsl) => *hsl,
+            Color::RGB(rgb) => HSLColor::from_rgb(&rgb),
+        };
+        hsl.to_slightly_darker_color().to_hsl()
+    }
+
+    pub fn new(color_mode: &ColorMode, color_config: &ColorConfig) -> Self {
+        match color_mode {
+            ColorMode::RGB => Color::RGB(RGBColor::new(&color_config)),
+            ColorMode::HSL => Color::HSL(HSLColor::new(&color_config)),
+        }
+    }
+
+    pub fn update(&mut self, config: &ColorConfig) {
+        match self {
+            Color::RGB(rgb) => rgb.update(config),
+            Color::HSL(hsl) => hsl.update(config),
+        }
+    }
+
+    pub fn to_string(&self) -> String {
+        match self {
+            Color::RGB(rgb) => rgb.to_rgba(),
+
+            Color::HSL(hsl) => hsl.to_hsla(),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -206,7 +313,7 @@ impl Circle {
     pub fn new(config: &Config, circle_config: &CircleConfig) -> Self {
         Circle {
             position: Position::new(&circle_config),
-            color: Color::new(&circle_config.color_config),
+            color: Color::new(&config.color_mode, &circle_config.color_config),
             radius: config.radius,
             color_config: circle_config.color_config,
             dirty: true,
@@ -221,9 +328,6 @@ impl Circle {
 
     pub fn color(&self) -> String {
         self.color.to_string()
-    }
-    pub fn opaque_color(&self) -> String {
-        self.color.to_opaque_string()
     }
 }
 

@@ -696,6 +696,63 @@ impl ColorParamConfigSliderConfig {
         div
     }
 
+    fn rgb_create_section_slider(
+        &self,
+        universe: &Arc<Mutex<Universe>>,
+    ) -> web_sys::HtmlDivElement {
+        let div = new_control_div();
+        let initial_config = (self.of_universe)(&universe.lock().unwrap());
+        let delta_slider_config = SliderConfig {
+            id: String::from(&format!("{}-{}", self.id, "delta")),
+            left_label: Some(String::from("Δ")),
+            min: 0.0,
+            max: initial_config.max_value - initial_config.min_value,
+            of_universe: (move |universe| universe.circle_config.color_config.rgb_config.max_delta),
+            on_update: (move |universe, value| {
+                universe.circle_config.color_config.rgb_config.max_delta = value
+            }),
+            step: self.step,
+            title: String::from("Rgb delta"),
+        };
+
+        let delta_slider = SliderConfig::create_slider(&delta_slider_config, &universe);
+
+        let min_value_slider_config = SliderConfig {
+            id: String::from(&format!("{}-{}", self.id, "min_value")),
+            left_label: Some(String::from("↓")),
+            min: 0.0,
+            max: 1.0,
+            of_universe: (move |universe| universe.circle_config.color_config.rgb_config.min_value),
+            on_update: (move |universe, value| {
+                universe.circle_config.color_config.rgb_config.min_value = value
+            }),
+            step: self.step,
+            title: String::from("Rgb min_value"),
+        };
+
+        let min_value_slider = SliderConfig::create_slider(&min_value_slider_config, &universe);
+
+        let max_value_slider_config = SliderConfig {
+            id: String::from(&format!("{}-{}", self.id, "max_value")),
+            left_label: Some(String::from("↑")),
+            min: initial_config.min_value,
+            max: initial_config.max_value,
+            of_universe: (move |universe| universe.circle_config.color_config.rgb_config.max_value),
+            on_update: (move |universe, value| {
+                universe.circle_config.color_config.rgb_config.max_value = value
+            }),
+            step: self.step,
+            title: String::from("Rgb max_value"),
+        };
+
+        let max_value_slider = SliderConfig::create_slider(&max_value_slider_config, &universe);
+
+        div.set_inner_text("RGB");
+        div.append_child(&delta_slider).unwrap();
+        div.append_child(&min_value_slider).unwrap();
+        div.append_child(&max_value_slider).unwrap();
+        div
+    }
     fn create_hue_section(universe: &Arc<Mutex<Universe>>) -> web_sys::HtmlDivElement {
         let config = ColorParamConfigSliderConfig {
             id: String::from("hue-config"),
@@ -722,6 +779,16 @@ impl ColorParamConfigSliderConfig {
             step: 0.05,
         };
         config.lightness_create_section_slider(universe)
+    }
+
+    fn create_rgb_section(universe: &Arc<Mutex<Universe>>) -> web_sys::HtmlDivElement {
+        let config = ColorParamConfigSliderConfig {
+            id: String::from("rgb-config"),
+            of_universe: (|universe| universe.circle_config.color_config.rgb_config),
+
+            step: 0.05,
+        };
+        config.rgb_create_section_slider(universe)
     }
 }
 
@@ -929,8 +996,10 @@ fn update_dimensions(width: f64, height: f64) {
 // Called when the wasm module is instantiated
 #[wasm_bindgen(start)]
 pub fn main() -> Result<(), JsValue> {
-    let width = 1000.0;
-    let height = 1000.0;
+    let width = 500.0;
+    let height = 250.0;
+    // let width = 1000.0;
+    // let height = 1000.0;
     // let width = body().client_width();
     // let height = body().client_height();
     update_canvas_size(height.into(), width.into());
@@ -966,6 +1035,12 @@ pub fn main() -> Result<(), JsValue> {
                     max_delta: 0.05,
                     min_value: 0.0,
                     max_value: 1.0,
+                },
+
+                rgb_config: ColorParamConfig {
+                    max_delta: 2.,
+                    min_value: 0.,
+                    max_value: 255.,
                 },
             },
         },
@@ -1078,6 +1153,16 @@ pub fn main() -> Result<(), JsValue> {
         },
     };
     let start_stop_button = start_stop_button_config.new_button(&universe, &svg);
+
+    let color_mode_button_id = "color-mode-button";
+    let color_mode_button_config = ButtonConfig {
+        id: String::from(color_mode_button_id),
+        text: ButtonText::DYNAMIC(move |universe| universe.config.color_mode.to_button_display()),
+        on_click: (move |universe, _svg| {
+            universe.config.color_mode.toggle();
+        }),
+    };
+    let color_mode_button = color_mode_button_config.new_button(&universe, &svg);
 
     let speed_button_id = "speed-button";
     let speed_button_config = ButtonConfig {
@@ -1201,6 +1286,7 @@ pub fn main() -> Result<(), JsValue> {
     body().append_child(&freeze_button)?;
     body().append_child(&save_button)?;
     body().append_child(&trash_button)?;
+    body().append_child(&color_mode_button)?;
 
     // body().append_child(&update_size_div)?;
     body().append_child(&new_circle_div)?;
@@ -1217,6 +1303,7 @@ pub fn main() -> Result<(), JsValue> {
     body().append_child(&ColorParamConfigSliderConfig::create_lightness_section(
         &universe,
     ))?;
+    body().append_child(&ColorParamConfigSliderConfig::create_rgb_section(&universe))?;
     body().append_child(&svg.lock().unwrap())?;
 
     universe.lock().unwrap().add_circle();
