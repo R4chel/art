@@ -10,6 +10,14 @@ pub struct Position {
     pub y: f64,
 }
 
+impl Position {
+    pub fn rounded_x(&self) -> String {
+        format!("{:.3}", self.x)
+    }
+    pub fn rounded_y(&self) -> String {
+        format!("{:.3}", self.y)
+    }
+}
 // not sure what I'm going to do with this but currently leaving in option to use either
 fn random() -> f64 {
     if false {
@@ -174,7 +182,7 @@ impl HSLColor {
 
     pub fn to_hsla(&self) -> String {
         format!(
-            "hsl({:.3}, {}, {}, {:3})",
+            "hsl({:.3}, {}, {}, {:.3})",
             self.hue.0, self.saturation, self.lightness, self.opacity
         )
     }
@@ -249,8 +257,8 @@ impl RGBColor {
 
     fn to_rgba(&self) -> String {
         format!(
-            "rgb({:.2}, {:.2}, {:.2}, {})",
-            self.r.0, self.g.0, self.b.0, self.a
+            "rgb({:.2}, {:.2}, {:.2}, {:.3})",
+            self.r.0, self.g.0, self.b.0, self.a.0
         )
     }
 

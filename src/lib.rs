@@ -31,10 +31,10 @@ fn circle_to_svg(circle: &Circle) -> web_sys::SvgCircleElement {
         .set_attribute("r", &circle.radius.to_string())
         .unwrap();
     svg_circle
-        .set_attribute("cx", &circle.position.x.to_string())
+        .set_attribute("cx", &circle.position.rounded_x())
         .unwrap();
     svg_circle
-        .set_attribute("cy", &circle.position.y.to_string())
+        .set_attribute("cy", &circle.position.rounded_y())
         .unwrap();
     svg_circle.set_attribute("fill", &circle.color()).unwrap();
     // svg_circle
@@ -996,8 +996,8 @@ fn update_dimensions(width: f64, height: f64) {
 // Called when the wasm module is instantiated
 #[wasm_bindgen(start)]
 pub fn main() -> Result<(), JsValue> {
-    let width = 500.0;
-    let height = 250.0;
+    let width = 600.0;
+    let height = 400.0;
     // let width = 1000.0;
     // let height = 1000.0;
     // let width = body().client_width();
