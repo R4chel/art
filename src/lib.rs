@@ -753,6 +753,65 @@ impl ColorParamConfigSliderConfig {
         div.append_child(&max_value_slider).unwrap();
         div
     }
+
+    fn radius_create_section_slider(
+        &self,
+        universe: &Arc<Mutex<Universe>>,
+    ) -> web_sys::HtmlDivElement {
+        let div = new_control_div();
+        let initial_config = (self.of_universe)(&universe.lock().unwrap());
+        let delta_slider_config = SliderConfig {
+            id: String::from(&format!("{}-{}", self.id, "delta")),
+            left_label: Some(String::from("Δ")),
+            min: 0.0,
+            max: initial_config.max_value - initial_config.min_value,
+            of_universe: (move |universe| universe.circle_config.radius_config.max_delta),
+            on_update: (move |universe, value| {
+                universe.circle_config.radius_config.max_delta = value
+            }),
+            step: self.step,
+            title: String::from("Radius delta"),
+        };
+
+        let delta_slider = SliderConfig::create_slider(&delta_slider_config, &universe);
+
+        let min_value_slider_config = SliderConfig {
+            id: String::from(&format!("{}-{}", self.id, "min_value")),
+            left_label: Some(String::from("↓")),
+            min: 0.0,
+            max: 1.0,
+            of_universe: (move |universe| universe.circle_config.radius_config.min_value),
+            on_update: (move |universe, value| {
+                universe.circle_config.radius_config.min_value = value
+            }),
+            step: self.step,
+            title: String::from("Radius min_value"),
+        };
+
+        let min_value_slider = SliderConfig::create_slider(&min_value_slider_config, &universe);
+
+        let max_value_slider_config = SliderConfig {
+            id: String::from(&format!("{}-{}", self.id, "max_value")),
+            left_label: Some(String::from("↑")),
+            min: initial_config.min_value,
+            max: initial_config.max_value,
+            of_universe: (move |universe| universe.circle_config.radius_config.max_value),
+            on_update: (move |universe, value| {
+                universe.circle_config.radius_config.max_value = value
+            }),
+            step: self.step,
+            title: String::from("Radius max_value"),
+        };
+
+        let max_value_slider = SliderConfig::create_slider(&max_value_slider_config, &universe);
+
+        div.set_inner_text("RADIUS");
+        div.append_child(&delta_slider).unwrap();
+        div.append_child(&min_value_slider).unwrap();
+        div.append_child(&max_value_slider).unwrap();
+        div
+    }
+
     fn create_hue_section(universe: &Arc<Mutex<Universe>>) -> web_sys::HtmlDivElement {
         let config = ColorParamConfigSliderConfig {
             id: String::from("hue-config"),
@@ -789,6 +848,16 @@ impl ColorParamConfigSliderConfig {
             step: 0.05,
         };
         config.rgb_create_section_slider(universe)
+    }
+
+    fn create_radius_section(universe: &Arc<Mutex<Universe>>) -> web_sys::HtmlDivElement {
+        let config = ColorParamConfigSliderConfig {
+            id: String::from("radius-config"),
+            of_universe: (|universe| universe.circle_config.radius_config),
+
+            step: 0.05,
+        };
+        config.radius_create_section_slider(universe)
     }
 }
 
@@ -1008,7 +1077,6 @@ pub fn main() -> Result<(), JsValue> {
             status: Status::RUNNING,
             speed: Speed::NORMAL,
             bug_checkbox: false,
-            radius: 10.,
             apple_steps: 1000,
             initial_height: height as f64,
             initial_width: width as f64,
@@ -1018,6 +1086,12 @@ pub fn main() -> Result<(), JsValue> {
             height: height as f64,
             width: width as f64,
             max_position_delta: 6.3,
+
+            radius_config: ColorParamConfig {
+                max_delta: 2.,
+                min_value: 1.,
+                max_value: 100.,
+            },
             color_config: ColorConfig {
                 hue_config: ColorParamConfig {
                     max_delta: 2.,
@@ -1078,17 +1152,17 @@ pub fn main() -> Result<(), JsValue> {
 
     let distance_slider_div = SliderConfig::create_slider(&distance_slider_config, &universe);
 
-    let radius_slider_id = "radius-slider";
-    let radius_slider_config = SliderConfig {
-        id: String::from(radius_slider_id),
-        title: String::from("Size"),
-        left_label: None,
-        min: 1.0,
-        max: 100.0,
-        step: 1.0,
-        of_universe: (move |universe| universe.config.radius),
-        on_update: (move |universe, value| universe.config.radius = value),
-    };
+    // let radius_slider_id = "radius-slider";
+    // let radius_slider_config = SliderConfig {
+    //     id: String::from(radius_slider_id),
+    //     title: String::from("Size"),
+    //     left_label: None,
+    //     min: 1.0,
+    //     max: 100.0,
+    //     step: 1.0,
+    //     of_universe: (move |universe| universe.config.radius),
+    //     on_update: (move |universe, value| universe.config.radius = value),
+    // };
 
     let add_button_config = ButtonConfig {
         id: String::from(ADD_BUTTON_ID),
@@ -1103,10 +1177,6 @@ pub fn main() -> Result<(), JsValue> {
         }),
     };
     let add_button = add_button_config.new_button(&universe, &svg);
-
-    let new_circle_div = SliderConfig::create_slider(&radius_slider_config, &universe);
-
-    new_circle_div.append_child(&add_button)?;
 
     let freeze_button_config = ButtonConfig {
         id: String::from("freeze-button"),
@@ -1289,7 +1359,7 @@ pub fn main() -> Result<(), JsValue> {
     body().append_child(&color_mode_button)?;
 
     // body().append_child(&update_size_div)?;
-    body().append_child(&new_circle_div)?;
+    body().append_child(&add_button)?;
     body().append_child(&new_apple_div)?;
     body().append_child(&bug_checkbox)?;
     body().append_child(&distance_slider_div)?;
@@ -1304,6 +1374,11 @@ pub fn main() -> Result<(), JsValue> {
         &universe,
     ))?;
     body().append_child(&ColorParamConfigSliderConfig::create_rgb_section(&universe))?;
+
+    body().append_child(&ColorParamConfigSliderConfig::create_radius_section(
+        &universe,
+    ))?;
+
     body().append_child(&svg.lock().unwrap())?;
 
     universe.lock().unwrap().add_circle();
