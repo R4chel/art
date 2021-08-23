@@ -27,21 +27,17 @@ fn circle_to_svg(circle: &Circle) -> web_sys::SvgCircleElement {
         .unwrap()
         .dyn_into::<web_sys::SvgCircleElement>()
         .unwrap();
-    svg_circle
-        .set_attribute("r", &circle.radius.to_string())
-        .unwrap();
-    svg_circle
-        .set_attribute("cx", &circle.position.rounded_x())
-        .unwrap();
-    svg_circle
-        .set_attribute("cy", &circle.position.rounded_y())
-        .unwrap();
-    svg_circle.set_attribute("fill", &circle.color()).unwrap();
-    // svg_circle
-    //     .set_attribute("stroke", &circle.opaque_color())
-    //     .unwrap();
 
-    // svg_circle.set_attribute("stroke-width", "2").unwrap();
+    fn set_attr(circle: &web_sys::SvgCircleElement, attr: &str, value: &f64) {
+        circle
+            .set_attribute(attr, &format!("{:.2}", value))
+            .unwrap();
+    }
+    set_attr(&svg_circle, "r", &circle.radius);
+    set_attr(&svg_circle, "cx", &circle.position.x);
+    set_attr(&svg_circle, "cy", &circle.position.y);
+    svg_circle.set_attribute("fill", &circle.color()).unwrap();
+
     svg_circle
 }
 
