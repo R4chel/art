@@ -1,6 +1,9 @@
 use js_sys::Math::random as js_math_random;
 use std::f64;
 use std::fmt::{self, Display};
+use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsCast;
+
 
 const MIN_POS: f64 = 0.0;
 
@@ -69,7 +72,8 @@ impl ColorBit {
     fn update(&mut self, config: &CircleConfig) -> () {
         let min = self.0.saturating_sub(config.max_color_delta);
         let max = self.0.saturating_add(config.max_color_delta);
-        self.0 = f64::floor(random() * (max - min + 1) as f64) as u8 + min;
+
+        self.0 = f64::floor(random() * ((max - min).saturating_add(1)) as f64) as u8 + min;
     }
 }
 
